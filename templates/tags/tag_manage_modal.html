@@ -1,0 +1,103 @@
+<!-- Tag Management Modal (staff only) -->
+<div id="manage-tags-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Manage Tags</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('manage-tags-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;">
+      <p class="tag-modal-subtitle">Tags are shared across recordings and writings.</p>
+      <div class="tag-create-row" style="margin-bottom:1.25rem;">
+        <input type="text" id="tag-create-input" placeholder="Enter tag name..." class="tag-create-input" maxlength="100">
+        <button type="button" id="tag-create-btn" class="tag-create-btn" onclick="createTag()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add
+        </button>
+      </div>
+      <div id="tag-list-container">
+        <div class="tag-modal-loading">Loading tags...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TAG_LIST_URL = "{% url 'tag-list' %}";
+const TAG_CREATE_URL = "{% url 'tag-create' %}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+function openTagModal() {
+  document.getElementById('manage-tags-modal').style.display = 'flex';
+  loadTags();
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function loadTags() {
+  const container = document.getElementById('tag-list-container');
+  container.innerHTML = '<div class="tag-modal-loading">Loading...</div>';
+  fetch(TAG_LIST_URL, {credentials: 'same-origin'})
+    .then(r => r.json())
+    .then(data => {
+      if (data.tags.length === 0) {
+        container.innerHTML = '<p class="tag-modal-empty">No tags yet. Create your first tag above.</p>';
+        return;
+      }
+      let html = '<ul class="tag-manager-list">';
+      data.tags.forEach(tag => {
+        html += '<li class="tag-manager-item" id="tag-item-' + tag.id + '">'
+          + '<span class="tag-manager-item-name">' + escapeHtml(tag.name) + '</span>'
+          + '<button type="button" class="tag-delete-btn" title="Delete tag" onclick="deleteTag(' + tag.id + ',\'' + escapeHtml(tag.name).replace(/'/g, "\\'") + '\')">'
+          + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+          + '</button>'
+          + '</li>';
+      });
+      html += '</ul>';
+      container.innerHTML = html;
+    })
+    .catch(() => {
+      container.innerHTML = '<p class="tag-modal-empty">Failed to load tags.</p>';
+    });
+}
+
+function createTag() {
+  const input = document.getElementById('tag-create-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+  fetch(TAG_CREATE_URL, {method: 'POST', body: formData, credentials: 'same-origin'})
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        input.value = '';
+        loadTags();
+      } else {
+        input.classList.add('input-error');
+        setTimeout(() => input.classList.remove('input-error'), 1500);
+      }
+    })
+    .catch(() => {});
+}
+
+function deleteTag(id, name) {
+  if (!confirm('Delete tag "' + name + '"? This will remove it from all recordings and writings.')) return;
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+  fetch('/tags/' + id + '/delete/', {method: 'POST', body: formData, credentials: 'same-origin'})
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) loadTags();
+    })
+    .catch(() => {});
+}
+
+document.getElementById('tag-create-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); createTag(); }
+});
+</script>

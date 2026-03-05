@@ -84,6 +84,18 @@ let micStream;
 let listenerCount = 0;
 let isMuted = false;
 
+/* --- Cleanup mic and recorder to release audio hardware --- */
+function cleanupMic() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    try { mediaRecorder.stop(); } catch (e) {}
+  }
+  mediaRecorder = null;
+  if (micStream) {
+    micStream.getTracks().forEach(track => track.stop());
+    micStream = null;
+  }
+}
+
 function connectWebSocket() {
   ws = new WebSocket(wsUrl);
 
@@ -113,6 +125,7 @@ function connectWebSocket() {
     document.getElementById("status-badge").classList.remove("live-badge-active");
     document.getElementById("status-text").textContent = "Connection lost";
     stopVisualizer();
+    cleanupMic();
   };
 
   ws.onerror = () => {
@@ -153,7 +166,13 @@ function arrayBufferToBase64(buffer) {
 async function startMic() {
   await showCountdown();
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
     mediaRecorder = new MediaRecorder(micStream, {mimeType: "audio/webm;codecs=opus"});
 
     mediaRecorder.ondataavailable = async (event) => {
@@ -233,6 +252,12 @@ document.getElementById("stop-form").addEventListener("submit", function(e) {
   if (!confirm("Are you sure you want to stop this stream? All listeners will be disconnected.")) {
     e.preventDefault();
   }
+});
+
+/* --- Cleanup on page unload --- */
+window.addEventListener("beforeunload", () => {
+  cleanupMic();
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
 });
 
 connectWebSocket();

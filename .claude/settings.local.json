@@ -20,7 +20,27 @@
       "Bash(git add:*)",
       "Bash(git push:*)",
       "WebSearch",
-      "WebFetch(domain:www.khanqah.org)"
+      "WebFetch(domain:www.khanqah.org)",
+      "Bash(where claude:*)",
+      "Bash(echo $PATH:*)",
+      "Bash(alias:*)",
+      "Bash(env:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(code:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'' port={f.split\\(\"\"/\"\"\\)[-1].replace\\(\"\".lock\"\",\"\"\"\"\\)}, workspaces={d.get\\(\"\"workspaceFolders\"\",[]\\)}''\\)\")",
+      "Bash(done)",
+      "Bash(for f in /c/Users/Saad/.claude/ide/*.lock)",
+      "Bash(do echo \"File: $f\")",
+      "Read(//c/Users/Saad/Desktop/Khanqah-Website/**)",
+      "Bash(powershell.exe:*)",
+      "Bash(for d in /c/Users/Saad/.claude/projects/*/)",
+      "Bash(do echo \"=== $d ===\")",
+      "Bash(docker-compose logs:*)",
+      "Bash(grep:*)",
+      "Bash(# Get the full windowsState to see what windows VS Code is trying to restore\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/globalStorage/storage.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nws = data.get\\('windowsState', {}\\)\nprint\\(json.dumps\\(ws, indent=2\\)[:3000]\\)\n\" 2>/dev/null)",
+      "Bash(# Check VS Code terminal profiles configuration\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/settings.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nfor k, v in data.items\\(\\):\n    print\\(f'{k}: {json.dumps\\(v\\)}'\\)\n\" 2>/dev/null)",
+      "Bash(# Search VS Code storage for claude-related entries\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/globalStorage/storage.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nfor k, v in data.items\\(\\):\n    s = json.dumps\\(v\\) if not isinstance\\(v, str\\) else v\n    if 'claude' in k.lower\\(\\) or 'claude' in s.lower\\(\\):\n        print\\(f'{k}: {s[:300]}'\\)\n\" 2>/dev/null)",
+      "Bash(tasklist:*)"
     ]
   }
 }

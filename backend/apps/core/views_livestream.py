@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views import View
@@ -54,6 +54,21 @@ class LiveStreamListenView(DetailView):
     context_object_name = "livestream"
     slug_field = "stream_key"
     slug_url_kwarg = "stream_key"
+
+
+class LiveStreamStatusAPIView(View):
+    """JSON endpoint that returns whether a stream is still active.
+    Listeners poll this every 5 seconds to detect when the stream ends."""
+
+    def get(self, request, stream_key):
+        stream = get_object_or_404(LiveStream, stream_key=stream_key)
+        return JsonResponse({
+            "is_active": stream.is_active,
+            "title": stream.title,
+        })
+
+    def post(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["GET"])
 
 
 class LiveStreamStopView(StaffRequiredMixin, View):

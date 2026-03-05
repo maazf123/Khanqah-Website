@@ -8,4 +8,5 @@ urlpatterns = [
     path("<uuid:stream_key>/broadcast/", views.LiveStreamBroadcastView.as_view(), name="livestream-broadcast"),
     path("<uuid:stream_key>/listen/", views.LiveStreamListenView.as_view(), name="livestream-listen"),
     path("<uuid:stream_key>/stop/", views.LiveStreamStopView.as_view(), name="livestream-stop"),
+    path("<uuid:stream_key>/status/", views.LiveStreamStatusAPIView.as_view(), name="livestream-status"),
 ]

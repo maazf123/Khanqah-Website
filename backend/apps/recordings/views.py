@@ -1,6 +1,11 @@
+import json
+
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
+from django.http import HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
 
 from apps.recordings.models import Recording
@@ -60,6 +65,11 @@ class RecordingDetailView(DetailView):
     template_name = "recordings/recording_detail.html"
     context_object_name = "recording"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tags"] = Tag.objects.all()
+        return context
+
 
 class RecordingSearchView(ListView):
     model = Recording
@@ -108,3 +118,38 @@ class RecordingCreateView(StaffRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("recording-list")
+
+
+class RecordingUpdateView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        recording = get_object_or_404(Recording, pk=pk)
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"ok": False, "error": "Invalid JSON."})
+
+        if "title" in data:
+            if not data["title"].strip():
+                return JsonResponse({"ok": False, "error": "Title is required."})
+            recording.title = data["title"].strip()
+        if "description" in data:
+            recording.description = data["description"]
+        recording.save()
+
+        if "tags" in data:
+            recording.tags.set(data["tags"])
+
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class RecordingDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        recording = get_object_or_404(Recording, pk=pk)
+        recording.delete()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])

@@ -95,6 +95,29 @@ let initSegment = null;
 let isPlaying = false;
 let wasConnected = false;
 
+/* --- Cleanup audio pipeline to release audio hardware --- */
+function cleanupAudio() {
+  isPlaying = false;
+  if (audioElement) {
+    audioElement.pause();
+    URL.revokeObjectURL(audioElement.src);
+    audioElement.remove();
+    audioElement = null;
+  }
+  if (sourceBuffer && mediaSource && mediaSource.readyState === 'open') {
+    try { sourceBuffer.abort(); } catch (e) {}
+  }
+  if (mediaSource && mediaSource.readyState === 'open') {
+    try { mediaSource.endOfStream(); } catch (e) {}
+  }
+  mediaSource = null;
+  sourceBuffer = null;
+  audioQueue = [];
+}
+
+/* Max buffered seconds before we trim old data */
+const MAX_BUFFER_SECONDS = 10;
+
 function connectWebSocket() {
   document.getElementById("error-state").style.display = "none";
   document.getElementById("ended-state").style.display = "none";
@@ -125,12 +148,10 @@ function connectWebSocket() {
       const bytes = base64ToUint8Array(data.data);
       if (!initSegment) {
         initSegment = bytes;
-        console.log('[livestream] init segment received, size:', bytes.byteLength);
       }
       if (isPlaying) {
         startVisualizer();
         audioQueue.push(bytes);
-        console.log('[livestream] chunk queued, size:', bytes.byteLength, 'queue:', audioQueue.length, 'sb updating:', sourceBuffer?.updating);
         flushQueue();
       }
     }
@@ -142,13 +163,11 @@ function connectWebSocket() {
     stopVisualizer();
 
     if (event.code === 1000 || !wasConnected) {
-      // Normal close or stream doesn't exist — show ended state
       document.getElementById("status-badge").textContent = "ENDED";
       document.getElementById("status-text").textContent = "Stream has ended";
       document.getElementById("audio-player").style.display = "none";
       document.getElementById("ended-state").style.display = "block";
     } else {
-      // Abnormal close — show error state with reconnect
       document.getElementById("status-badge").textContent = "DISCONNECTED";
       document.getElementById("status-text").textContent = "Connection lost";
       document.getElementById("audio-player").style.display = "none";
@@ -162,19 +181,44 @@ function connectWebSocket() {
 }
 
 function reconnect() {
+  cleanupAudio();
   initSegment = null;
-  audioQueue = [];
   connectWebSocket();
 }
 
 let needsPlay = false;
+let trimPending = false;
+
+/* Trim old buffered data to prevent unbounded growth / QuotaExceededError */
+function trimBuffer() {
+  if (trimPending || !sourceBuffer || sourceBuffer.updating) return;
+  if (sourceBuffer.buffered.length === 0) return;
+  const currentTime = audioElement ? audioElement.currentTime : 0;
+  const start = sourceBuffer.buffered.start(0);
+  const removeEnd = currentTime - 2;
+  if (removeEnd > start + 1) {
+    trimPending = true;
+    try {
+      sourceBuffer.remove(start, removeEnd);
+    } catch (e) {
+      trimPending = false;
+    }
+  }
+}
 
 function flushQueue() {
-  if (sourceBuffer && !sourceBuffer.updating && audioQueue.length > 0) {
-    try {
-      sourceBuffer.appendBuffer(audioQueue.shift());
-    } catch (e) {
-      console.error('[livestream] appendBuffer error:', e);
+  if (!sourceBuffer || sourceBuffer.updating || audioQueue.length === 0) return;
+  try {
+    sourceBuffer.appendBuffer(audioQueue.shift());
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      // Buffer full — force trim and retry
+      audioQueue = [];
+      if (sourceBuffer.buffered.length > 0 && !sourceBuffer.updating) {
+        const start = sourceBuffer.buffered.start(0);
+        const end = sourceBuffer.buffered.end(sourceBuffer.buffered.length - 1);
+        try { sourceBuffer.remove(start, end - 1); } catch (e2) {}
+      }
     }
   }
 }
@@ -188,22 +232,21 @@ function togglePlay() {
     audioElement = new Audio();
     audioElement.volume = 1.0;
     audioElement.src = URL.createObjectURL(mediaSource);
-    document.body.appendChild(audioElement);
 
     mediaSource.addEventListener('sourceopen', () => {
-      console.log('[livestream] sourceopen fired');
       sourceBuffer = mediaSource.addSourceBuffer('audio/webm;codecs=opus');
       sourceBuffer.mode = 'sequence';
 
       sourceBuffer.addEventListener('updateend', () => {
-        console.log('[livestream] updateend, buffered:', sourceBuffer.buffered.length > 0 ? sourceBuffer.buffered.end(0).toFixed(2) + 's' : 'empty', 'currentTime:', audioElement?.currentTime.toFixed(2));
+        trimPending = false;
         // Start playback after first chunk is buffered
         if (needsPlay && audioElement) {
           needsPlay = false;
-          audioElement.play().then(() => {
-            console.log('[livestream] playback started');
-          }).catch(e => console.error('[livestream] play() error:', e));
+          audioElement.play().catch(() => {});
         }
+        // Trim old buffer data to prevent memory growth
+        trimBuffer();
+        // Keep flushing queued chunks
         flushQueue();
         // Keep latency low: if buffered ahead by >3s, skip to live edge
         if (audioElement && sourceBuffer.buffered.length > 0) {
@@ -214,8 +257,13 @@ function togglePlay() {
         }
       });
 
-      sourceBuffer.addEventListener('error', (e) => {
-        console.error('[livestream] sourceBuffer error:', e);
+      sourceBuffer.addEventListener('error', () => {
+        // Reset the audio pipeline on SourceBuffer error
+        cleanupAudio();
+        document.getElementById("play-btn").textContent = "Tap to Listen";
+        document.getElementById("play-btn").classList.remove("btn-secondary");
+        document.getElementById("play-btn").classList.add("btn-primary");
+        document.getElementById("player-status").textContent = "Audio error — tap to retry";
       });
 
       // For late joiners: feed the cached init segment first
@@ -230,26 +278,12 @@ function togglePlay() {
     document.getElementById("play-btn").classList.add("btn-secondary");
     document.getElementById("player-status").textContent = "Receiving audio from broadcaster";
   } else {
-    isPlaying = false;
-    stopVisualizer();
-
-    if (audioElement) {
-      audioElement.pause();
-      URL.revokeObjectURL(audioElement.src);
-      audioElement.remove();
-      audioElement = null;
-    }
-    if (mediaSource && mediaSource.readyState === 'open') {
-      mediaSource.endOfStream();
-    }
-    mediaSource = null;
-    sourceBuffer = null;
-    audioQueue = [];
-
+    cleanupAudio();
     document.getElementById("play-btn").textContent = "Tap to Listen";
     document.getElementById("play-btn").classList.remove("btn-secondary");
     document.getElementById("play-btn").classList.add("btn-primary");
     document.getElementById("player-status").textContent = "";
+    stopVisualizer();
   }
 }
 
@@ -278,6 +312,45 @@ function stopVisualizer() {
     bar.style.height = "4px";
   });
 }
+
+/* --- Poll stream status every 5 seconds to detect when it ends --- */
+const statusUrl = "{% url 'livestream-status' stream_key=livestream.stream_key %}";
+let pollInterval = null;
+
+function pollStreamStatus() {
+  fetch(statusUrl)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.is_active) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+        // Close the WebSocket cleanly
+        if (ws && ws.readyState === WebSocket.OPEN) ws.close(1000);
+        // Clean up audio
+        cleanupAudio();
+        stopVisualizer();
+        // Show ended state
+        document.getElementById("status-badge").textContent = "ENDED";
+        document.getElementById("status-badge").classList.remove("live-badge-active");
+        document.getElementById("status-badge").style.background = "var(--text-muted)";
+        document.getElementById("status-badge").style.animation = "none";
+        document.getElementById("status-text").textContent = "Stream has ended";
+        document.getElementById("audio-player").style.display = "none";
+        document.getElementById("error-state").style.display = "none";
+        document.getElementById("ended-state").style.display = "block";
+      }
+    })
+    .catch(() => {});  // Silently ignore network errors (WS handler covers disconnects)
+}
+
+pollInterval = setInterval(pollStreamStatus, 5000);
+
+/* --- Cleanup on page unload --- */
+window.addEventListener("beforeunload", () => {
+  if (pollInterval) clearInterval(pollInterval);
+  cleanupAudio();
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+});
 
 connectWebSocket();
 </script>

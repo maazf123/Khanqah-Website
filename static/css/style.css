@@ -7,6 +7,34 @@
   box-sizing: border-box;
 }
 
+/* --- Kill I-beam cursor and text caret globally --- */
+* {
+  cursor: default !important;
+  caret-color: transparent;
+}
+
+/* Restore pointer cursor for interactive elements */
+a, button, [role="button"], label[for], select, summary,
+input[type="submit"], input[type="button"], input[type="reset"],
+input[type="checkbox"], input[type="radio"], input[type="range"],
+.btn, .nav-link, .navbar-brand, .nav-links a, .card, .card-item,
+.admin-link-subtle, .modal-close, .file-upload-btn, .play-btn,
+.skip-btn, .progress-bar, .volume-btn, .tag-chip, .tag-create-btn,
+.tag-delete-btn, .login-btn, .nav-logout-btn, .tags-dropdown,
+.tags-dropdown-item, .detail-action-btn, .nav-go-live {
+  cursor: pointer !important;
+}
+
+/* Restore text cursor and visible caret for editable fields only */
+input[type="text"], input[type="email"], input[type="password"],
+input[type="search"], input[type="url"], input[type="tel"],
+input[type="number"], input[type="date"], input[type="time"],
+input[type="datetime-local"], textarea, [contenteditable="true"],
+.share-link-input {
+  cursor: text !important;
+  caret-color: auto;
+}
+
 :root {
   --brown: #6B3A2A;
   --brown-dark: #4A2518;
@@ -315,8 +343,29 @@ a {
 /* ===== ADMIN ACTIONS ===== */
 .admin-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.admin-link-subtle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer !important;
+}
+
+.admin-link-subtle:hover {
+  color: var(--brown);
 }
 
 .admin-actions .btn-primary {
@@ -383,7 +432,7 @@ a {
 
 .crud-form .form-group select {
   appearance: auto;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .crud-form .form-group small {
@@ -406,7 +455,7 @@ a {
   background: var(--brown);
   color: var(--white);
   border: none;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: background 0.2s;
 }
 
@@ -445,7 +494,7 @@ a {
   border: 1.5px solid var(--cream-dark);
   background: var(--white);
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all 0.2s;
 }
 
@@ -464,7 +513,7 @@ a {
 /* ===== RECORDINGS GRID ===== */
 .recordings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
 }
 
@@ -588,7 +637,7 @@ a {
   background: var(--brown);
   color: var(--white);
   border: none;
-  cursor: pointer;
+  cursor: pointer !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -613,7 +662,7 @@ a {
   background: none;
   border: none;
   color: var(--text-muted);
-  cursor: pointer;
+  cursor: pointer !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -653,7 +702,7 @@ a {
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 4px;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .progress-bar .progress {
@@ -674,7 +723,7 @@ a {
   background: none;
   border: none;
   color: var(--text-muted);
-  cursor: pointer;
+  cursor: pointer !important;
   padding: 4px;
   display: flex;
   align-items: center;
@@ -726,12 +775,95 @@ a {
   margin-bottom: 2rem;
 }
 
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .detail-title {
   font-family: 'Vollkorn', serif;
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
   line-height: 1.3;
+}
+
+.detail-admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.detail-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--cream-dark);
+  background: var(--white);
+  color: var(--text-muted);
+  cursor: pointer !important;
+  transition: all 0.2s;
+}
+
+.detail-action-btn.edit-btn:hover {
+  color: var(--brown);
+  border-color: var(--brown-light);
+  background: var(--brown-muted);
+}
+
+.detail-action-btn.delete-btn:hover {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.tags-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inline-admin-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+.featured-admin-actions {
+  position: absolute;
+  display: flex;
+  gap: 0.4rem;
+  z-index: 2;
+}
+
+.featured-recording .featured-admin-actions {
+  bottom: 1rem;
+  right: 1.25rem;
+}
+
+.featured-writing .featured-admin-actions {
+  top: 1.25rem;
+  right: 1.25rem;
+}
+
+.card-admin-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin-top: 0.75rem;
+}
+
+.card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .detail-meta {
@@ -968,6 +1100,7 @@ a {
 
 /* ===== FEATURED RECORDING (list page) ===== */
 .featured-recording {
+  position: relative;
   background: var(--white);
   border-radius: var(--radius);
   overflow: hidden;
@@ -1137,6 +1270,7 @@ a {
 
 /* --- Featured Writing --- */
 .featured-writing {
+  position: relative;
   background: var(--white);
   border-radius: var(--radius);
   padding: 2.25rem 2.5rem;
@@ -1332,6 +1466,186 @@ a {
   background: var(--brown-muted);
 }
 
+/* ===== TAG MANAGER ===== */
+.tag-manager {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tag-manager-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(107, 58, 42, 0.06);
+  overflow: hidden;
+}
+
+.tag-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--cream-dark);
+}
+
+.tag-manager-title {
+  font-family: 'Vollkorn', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tag-manager-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.tag-manager-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--cream-dark);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.tag-create-form {
+  padding: 1.25rem 1.5rem;
+}
+
+.tag-create-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tag-create-input {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--cream);
+  transition: all 0.2s;
+}
+
+.tag-create-input:focus {
+  outline: none;
+  border-color: var(--brown-light);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(107, 58, 42, 0.08);
+}
+
+.tag-create-input::placeholder {
+  color: var(--text-muted);
+}
+
+.tag-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1.25rem;
+  background: var(--brown);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer !important;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tag-create-btn:hover {
+  background: var(--brown-light);
+}
+
+.tag-manager-list {
+  list-style: none;
+}
+
+.tag-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--cream-dark);
+  transition: background 0.15s;
+}
+
+.tag-manager-item:last-child {
+  border-bottom: none;
+}
+
+.tag-manager-item:hover {
+  background: var(--brown-muted);
+}
+
+.tag-manager-item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag-delete-form {
+  display: inline;
+}
+
+.tag-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer !important;
+  transition: all 0.2s;
+}
+
+.tag-delete-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.tag-manager-empty {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tag-modal-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 0.25rem;
+}
+
+.tag-modal-loading {
+  text-align: center;
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tag-modal-empty {
+  text-align: center;
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tag-create-input.input-error {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
 /* ===== LOGIN PAGE ===== */
 .login-wrapper {
   display: flex;
@@ -1426,7 +1740,7 @@ a {
   font-size: 0.9rem;
   font-weight: 600;
   font-family: inherit;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all 0.25s;
   margin-top: 0.5rem;
 }
@@ -1492,7 +1806,7 @@ a {
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.3px;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all 0.2s;
   font-family: inherit;
 }
@@ -1560,7 +1874,7 @@ a {
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all 0.2s;
   font-family: inherit;
 }
@@ -1633,7 +1947,7 @@ a {
   border: none;
   font-size: 1.5rem;
   color: var(--text-muted);
-  cursor: pointer;
+  cursor: pointer !important;
   padding: 0 4px;
   line-height: 1;
 }
@@ -1709,7 +2023,7 @@ a {
   font-size: 0.9rem;
   color: var(--text-secondary);
   background: var(--cream);
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all 0.2s;
   font-weight: 500;
 }
@@ -1732,7 +2046,7 @@ a {
   font-size: 0.9rem;
   color: var(--text-primary);
   background: var(--white);
-  cursor: pointer;
+  cursor: pointer !important;
   transition: border-color 0.2s;
   min-height: 42px;
 }
@@ -1799,7 +2113,7 @@ a {
   padding: 8px 14px;
   font-size: 0.85rem;
   color: var(--text-primary);
-  cursor: pointer;
+  cursor: pointer !important;
   transition: background 0.15s;
 }
 
@@ -1811,7 +2125,7 @@ a {
   accent-color: var(--brown);
   width: 15px;
   height: 15px;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 /* --- Livestream List Grid --- */
@@ -2075,7 +2389,7 @@ a {
 
 .listen-play-btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: not-allowed !important;
 }
 
 /* --- Listener Count --- */

@@ -12,7 +12,19 @@
   <div class="detail-accent"></div>
   <div class="detail-body">
     <div class="detail-header">
-      <h1 class="detail-title">{{ recording.title }}</h1>
+      <div class="detail-title-row">
+        <h1 class="detail-title">{{ recording.title }}</h1>
+        {% if user.is_authenticated and user.is_staff %}
+        <div class="detail-admin-actions">
+          <button type="button" class="detail-action-btn edit-btn" title="Edit" onclick="document.getElementById('edit-recording-modal').style.display='flex'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button type="button" class="detail-action-btn delete-btn" id="delete-recording-btn" title="Delete" onclick="deleteRecording()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+        {% endif %}
+      </div>
       <div class="detail-meta">
         <span>
           <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -123,4 +135,69 @@
   });
 })();
 </script>
+
+{% if user.is_authenticated and user.is_staff %}
+<div id="edit-recording-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Edit Recording</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('edit-recording-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-form" style="padding:1.25rem 1.5rem;">
+      <div class="form-group">
+        <label for="edit-rec-title">Title</label>
+        <input type="text" id="edit-rec-title" value="{{ recording.title }}" required>
+      </div>
+      <div class="form-group">
+        <label for="edit-rec-description">Description <span class="optional-label">(optional)</span></label>
+        <textarea id="edit-rec-description" rows="4">{{ recording.description }}</textarea>
+      </div>
+      {% if tags %}
+      <div class="form-group">
+        <label>Tags <span class="optional-label">(optional)</span></label>
+        <div class="tags-checkbox-group">
+          {% for tag in tags %}
+          <label class="tags-dropdown-item">
+            <input type="checkbox" class="edit-rec-tag" value="{{ tag.pk }}" {% if tag in recording.tags.all %}checked{% endif %}>
+            <span>{{ tag.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <button type="button" class="btn btn-primary" style="width:100%;justify-content:center;" onclick="saveRecording()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function saveRecording() {
+  var data = {};
+  var title = document.getElementById('edit-rec-title').value.trim();
+  var desc = document.getElementById('edit-rec-description').value;
+  data.title = title;
+  data.description = desc;
+  data.tags = [...document.querySelectorAll('.edit-rec-tag:checked')].map(c => parseInt(c.value));
+  fetch("{% url 'recording-update' recording.pk %}", {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+    body: JSON.stringify(data),
+    credentials: 'same-origin'
+  }).then(r => r.json()).then(d => {
+    if (d.ok) location.reload();
+    else alert(d.error || 'Failed to save.');
+  });
+}
+function deleteRecording() {
+  if (!confirm('Delete this recording? This cannot be undone.')) return;
+  fetch("{% url 'recording-delete' recording.pk %}", {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    credentials: 'same-origin'
+  }).then(r => r.json()).then(d => {
+    if (d.ok) window.location.href = "{% url 'recording-list' %}";
+  });
+}
+</script>
+{% endif %}
 {% endblock %}

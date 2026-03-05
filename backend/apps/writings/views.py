@@ -1,5 +1,8 @@
+import json
+
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
@@ -63,6 +66,11 @@ class WritingDetailView(DetailView):
     template_name = "writings/writing_detail.html"
     context_object_name = "writing"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tags"] = Tag.objects.all()
+        return context
+
 
 class WritingDetailAPIView(View):
     def get(self, request, pk):
@@ -96,3 +104,40 @@ class WritingCreateView(StaffRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("writing-list")
+
+
+class WritingUpdateView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        writing = get_object_or_404(Writing, pk=pk)
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"ok": False, "error": "Invalid JSON."})
+
+        if "title" in data:
+            if not data["title"].strip():
+                return JsonResponse({"ok": False, "error": "Title is required."})
+            writing.title = data["title"].strip()
+        if "body" in data:
+            if not data["body"].strip():
+                return JsonResponse({"ok": False, "error": "Body is required."})
+            writing.body = data["body"]
+        writing.save()
+
+        if "tags" in data:
+            writing.tags.set(data["tags"])
+
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class WritingDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        writing = get_object_or_404(Writing, pk=pk)
+        writing.delete()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])

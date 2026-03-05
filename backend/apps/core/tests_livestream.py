@@ -1,5 +1,5 @@
 """
-TDD tests for the LiveStream feature (Chunk 2).
+TDD tests for the LiveStream feature.
 
 Tests cover:
 1. LiveStream model (fields, defaults, ordering, __str__)
@@ -9,6 +9,8 @@ Tests cover:
 5. LiveStreamListenView (public listen page)
 6. LiveStreamStopView (staff-only stream stopping)
 7. Navigation (Go Live link visibility)
+8. LiveStreamStatusAPIView (polling endpoint for stream status)
+9. Listener page polling (JS polls status every 5 seconds)
 """
 
 import uuid
@@ -20,6 +22,7 @@ from django.urls import include, path, reverse
 from django.utils import timezone
 
 from apps.core.models import LiveStream
+from apps.core.views_home import HomeView
 
 # ---------------------------------------------------------------------------
 # Module-level URL configuration used by @override_settings(ROOT_URLCONF=...)
@@ -32,7 +35,9 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
-    path("", include("apps.recordings.urls")),
+    path("recordings/", include("apps.recordings.urls")),
+    path("tags/", include("apps.tags.urls")),
+    path("", HomeView.as_view(), name="home"),
 ]
 
 
@@ -488,3 +493,150 @@ class LiveStreamNavigationTests(TestCase):
         response = self.client.get(reverse("recording-list"))
         content = response.content.decode()
         self.assertNotIn("Go Live", content)
+
+
+# ============================================================================
+# 8. LiveStreamStatusAPIView Tests
+# ============================================================================
+@override_settings(ROOT_URLCONF="apps.core.tests_livestream")
+class LiveStreamStatusAPIViewTests(TestCase):
+    """Tests for the JSON status endpoint that listeners poll."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user("admin", password="pass", is_staff=True)
+        self.stream = LiveStream.objects.create(
+            title="Status Test", created_by=self.user
+        )
+        self.url = reverse(
+            "livestream-status", kwargs={"stream_key": self.stream.stream_key}
+        )
+
+    def test_status_returns_200(self):
+        """GET to the status endpoint returns HTTP 200."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_status_returns_json(self):
+        """The response Content-Type is application/json."""
+        response = self.client.get(self.url)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_status_active_stream(self):
+        """An active stream returns is_active=true in JSON."""
+        response = self.client.get(self.url)
+        data = response.json()
+        self.assertTrue(data["is_active"])
+
+    def test_status_ended_stream(self):
+        """An ended stream returns is_active=false in JSON."""
+        self.stream.is_active = False
+        self.stream.ended_at = timezone.now()
+        self.stream.save()
+        response = self.client.get(self.url)
+        data = response.json()
+        self.assertFalse(data["is_active"])
+
+    def test_status_contains_title(self):
+        """The response JSON includes the stream title."""
+        response = self.client.get(self.url)
+        data = response.json()
+        self.assertEqual(data["title"], "Status Test")
+
+    def test_status_nonexistent_stream_returns_404(self):
+        """A random UUID returns 404."""
+        fake_key = uuid.uuid4()
+        url = reverse("livestream-status", kwargs={"stream_key": fake_key})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_status_accessible_anonymous(self):
+        """Anonymous users can access the status endpoint (no login required)."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_status_post_not_allowed(self):
+        """POST to the status endpoint returns 405 Method Not Allowed."""
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_status_reflects_realtime_change(self):
+        """If the stream is stopped between two polls, the status changes."""
+        # First poll: active
+        response1 = self.client.get(self.url)
+        self.assertTrue(response1.json()["is_active"])
+
+        # Stop the stream
+        self.stream.is_active = False
+        self.stream.ended_at = timezone.now()
+        self.stream.save()
+
+        # Second poll: ended
+        response2 = self.client.get(self.url)
+        self.assertFalse(response2.json()["is_active"])
+
+
+# ============================================================================
+# 9. Listener Page Polling Tests
+# ============================================================================
+@override_settings(ROOT_URLCONF="apps.core.tests_livestream")
+class LiveStreamListenerPollingTests(TestCase):
+    """Tests that the listen page includes polling JS for stream status."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user("admin", password="pass", is_staff=True)
+        self.stream = LiveStream.objects.create(
+            title="Polling Test", created_by=self.user
+        )
+        self.url = reverse(
+            "livestream-listen", kwargs={"stream_key": self.stream.stream_key}
+        )
+
+    def test_listen_page_contains_status_url(self):
+        """The listen page JS includes the status API URL for polling."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        status_url = reverse(
+            "livestream-status", kwargs={"stream_key": self.stream.stream_key}
+        )
+        self.assertIn(status_url, html)
+
+    def test_listen_page_has_polling_interval(self):
+        """The listen page JS sets up a polling interval (setInterval)."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertIn("setInterval", html)
+
+    def test_listen_page_has_5_second_interval(self):
+        """The polling interval is 5000ms (5 seconds)."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertIn("5000", html)
+
+    def test_listen_page_polls_with_fetch(self):
+        """The listen page uses fetch() to call the status endpoint."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertIn("fetch(", html)
+
+    def test_listen_page_checks_is_active(self):
+        """The polling JS checks the is_active field from the response."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertIn("is_active", html)
+
+    def test_ended_stream_page_does_not_poll(self):
+        """When the stream is already ended on page load, no polling JS runs."""
+        self.stream.is_active = False
+        self.stream.save()
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        # The ended template block should NOT contain polling logic
+        self.assertNotIn("pollStreamStatus", html)
+
+    def test_listen_page_clears_interval_on_end(self):
+        """The JS clears the polling interval when the stream ends."""
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertIn("clearInterval", html)
