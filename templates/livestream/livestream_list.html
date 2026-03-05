@@ -1,18 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Live Streams - Al Hamid Foundation{% endblock %}
+{% block title %}Live Streams - Khanqah e Ashrafiyyah Akhtariyyah{% endblock %}
 {% block nav_live %}active{% endblock %}
 
-{% block hero %}
-<section class="hero">
-  <div class="hero-inner hero-centered">
-    <div class="hero-text">
-      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
-      <h2>Live Broadcasts</h2>
-      <p>Join live sessions from Al Hamid Foundation. Listen to talks, dhikr gatherings, and special events in real time.</p>
-      <span class="ornament"></span>
-    </div>
-  </div>
-</section>
+{% block hero_content %}
+<h2>Live Broadcasts</h2>
+<p>Join live sessions and listen to talks, dhikr gatherings, and special events in real time.</p>
+<span class="ornament"></span>
 {% endblock %}
 
 {% block content %}
@@ -49,7 +42,7 @@
     </svg>
   </div>
   <h3>No live streams right now</h3>
-  <p>Check back later for live broadcasts from Al Hamid Foundation.</p>
+  <p>Check back later for live broadcasts.</p>
 </div>
 {% endif %}
 {% endblock %}

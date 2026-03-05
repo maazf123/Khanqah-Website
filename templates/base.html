@@ -3,38 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Al Hamid Foundation - Audio Library{% endblock %}</title>
+  <title>{% block title %}Khanqah e Ashrafiyyah Akhtariyyah{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Vollkorn:wght@400;600;700&display=swap" rel="stylesheet">
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="{% url 'home' %}" class="navbar-brand">
-        <div>
-          <h1>Al Hamid Foundation</h1>
-          <span class="brand-sub">Enlighten | Enrich | Engage</span>
-        </div>
-      </a>
-      <ul class="nav-links">
-        <li><a href="{% url 'home' %}" class="{% block nav_home %}{% endblock %}">Home</a></li>
-        <li><a href="{% url 'recording-list' %}" class="{% block nav_recordings %}{% endblock %}">Recordings</a></li>
-        <li><a href="{% url 'writing-list' %}" class="{% block nav_writings %}{% endblock %}">Writings</a></li>
-        {% if user.is_authenticated and user.is_staff %}
-        <li><a href="{% url 'livestream-start' %}" class="nav-go-live">Go Live</a></li>
-        <li><a href="/admin/">Admin Panel</a></li>
-        <li><form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="nav-logout-btn">Logout</button></form></li>
-        {% else %}
-        <li><a href="{% url 'login' %}">Login</a></li>
-        {% endif %}
-      </ul>
-    </div>
-  </nav>
 
-  {% block hero %}{% endblock %}
+  {% block hero %}
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <a href="{% url 'home' %}" class="navbar-brand">
+          <span class="brand-name">Khanqah e Ashrafiyyah</span>
+          <span class="brand-sub">Al Hamid Foundation</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="{% url 'home' %}" class="{% block nav_home %}{% endblock %}">Home</a></li>
+          <li><a href="{% url 'recording-list' %}" class="{% block nav_recordings %}{% endblock %}">Recordings</a></li>
+          <li><a href="{% url 'writing-list' %}" class="{% block nav_writings %}{% endblock %}">Writings</a></li>
+          {% if user.is_authenticated and user.is_staff %}
+          <li><a href="{% url 'livestream-start' %}" class="nav-go-live">Go Live</a></li>
+          <li><a href="/admin/">Admin</a></li>
+          <li><form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="nav-logout-btn">Logout</button></form></li>
+          {% else %}
+          <li><a href="{% url 'login' %}">Login</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+    <div class="hero-inner">
+      <div class="hero-text">
+        {% block hero_content %}
+        <h2>Khanqah e Ashrafiyyah Akhtariyyah</h2>
+        <p>A spiritual sanctuary for the remembrance of Allah and the purification of the heart.</p>
+        {% endblock %}
+      </div>
+    </div>
+    <div class="hero-fade"></div>
+  </section>
+  {% endblock %}
 
   <main class="main-content">
     {% block content %}{% endblock %}
@@ -43,8 +54,8 @@
   {% block prefooter %}{% endblock %}
 
   <footer class="footer">
-    <div class="footer-brand">Al Hamid Foundation</div>
-    <div class="footer-motto">Enlighten | Enrich | Engage</div>
+    <div class="footer-brand">Khanqah e Ashrafiyyah Akhtariyyah</div>
+    <div class="footer-motto">Al Hamid Foundation</div>
   </footer>
 </body>
 </html>

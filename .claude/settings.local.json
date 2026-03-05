@@ -14,7 +14,10 @@
       "WebFetch(domain:api.mixlr.com)",
       "Bash(ls:*)",
       "Bash(docker-compose exec:*)",
-      "Bash(docker-compose restart:*)"
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose up:*)",
+      "WebFetch(domain:miftaah.org)",
+      "Bash(git add:*)"
     ]
   }
 }

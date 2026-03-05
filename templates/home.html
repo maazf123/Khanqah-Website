@@ -1,20 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Al Hamid Foundation{% endblock %}
+{% block title %}Khanqah e Ashrafiyyah Akhtariyyah{% endblock %}
 {% block nav_home %}active{% endblock %}
 
-{% block hero %}
-{% load static %}
-<section class="hero">
-  <div class="hero-inner">
-    <img src="{% static 'img/logo.webp' %}" alt="Al Hamid Foundation" class="hero-logo">
-    <div class="hero-text">
-      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
-      <h2>Al Hamid Foundation</h2>
-      <p>A spiritual sanctuary for the remembrance of Allah and the purification of the heart.</p>
-      <span class="ornament"></span>
-    </div>
-  </div>
-</section>
+{% block hero_content %}
+<div class="hero-tagline">Al Hamid Foundation</div>
+<h2>Khanqah e Ashrafiyyah Akhtariyyah</h2>
+<p>A spiritual sanctuary for the remembrance of Allah and the purification of the heart.</p>
+<span class="ornament"></span>
 {% endblock %}
 
 {% block content %}
@@ -68,7 +60,7 @@
     </div>
   </a>
   <a href="{% url 'livestream-list' %}" class="home-feature-card">
-    <div class="home-feature-accent" style="background: linear-gradient(90deg, #dc2626, var(--gold));"></div>
+    <div class="home-feature-accent" style="background: linear-gradient(90deg, #dc2626, var(--copper));"></div>
     <div class="home-feature-body">
       <div class="home-feature-icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
