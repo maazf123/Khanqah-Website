@@ -75,66 +75,81 @@ function updateTagDisplay(){
 </script>
 {% endif %}
 
-{% if tags %}
-<div class="filters-bar">
-  <span class="filter-label">Browse by topic:</span>
-  <div class="tag-filters">
-    <a href="{% url 'recording-list' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
-    {% for tag in tags %}
-      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
-    {% endfor %}
+{% if featured_recording %}
+<div class="featured-recording">
+  <div class="featured-recording-header">
+    <span class="featured-label">Latest Recording</span>
   </div>
+  <div class="featured-recording-body">
+    <div class="featured-recording-info">
+      <h1 class="featured-recording-title">{{ featured_recording.title }}</h1>
+      <div class="featured-recording-meta">
+        <span class="featured-recording-speaker">
+          <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          {{ featured_recording.speaker }}
+        </span>
+        <span class="featured-recording-date">
+          <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+          {{ featured_recording.recording_date|date:"F d, Y" }}
+        </span>
+      </div>
+      {% if featured_recording.tags.all %}
+      <div class="featured-recording-tags">
+        {% for tag in featured_recording.tags.all %}
+          <span class="card-tag">{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if featured_recording.description %}
+      <p class="featured-recording-desc">{{ featured_recording.description }}</p>
+      {% endif %}
+    </div>
+    <a href="{% url 'recording-detail' featured_recording.pk %}" class="featured-recording-play">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      <span>Listen Now</span>
+    </a>
+  </div>
+</div>
+
+{% if recent_recordings %}
+<h2 class="section-subheading">More Recordings</h2>
+<div class="recordings-grid">
+  {% for recording in recent_recordings %}
+  <a href="{% url 'recording-detail' recording.pk %}" class="recording-card-link">
+  <article class="recording-card">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-meta">
+        <div class="card-speaker">
+          <span class="speaker-avatar">{{ recording.speaker|make_list|first }}</span>
+          {{ recording.speaker }}
+        </div>
+        <span class="card-date">{{ recording.recording_date|date:"M d, Y" }}</span>
+      </div>
+      <h3 class="card-title">{{ recording.title }}</h3>
+      {% if recording.description %}
+        <p class="card-description">{{ recording.description }}</p>
+      {% endif %}
+      <div class="card-tags">
+        {% for tag in recording.tags.all %}
+          <span class="card-tag">{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </article>
+  </a>
+  {% endfor %}
 </div>
 {% endif %}
 
-{% if recordings %}
-  <div class="recordings-grid">
-    {% for recording in recordings %}
-    <a href="{% url 'recording-detail' recording.pk %}" class="recording-card-link">
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker">
-            <span class="speaker-avatar">{{ recording.speaker|make_list|first }}</span>
-            {{ recording.speaker }}
-          </div>
-          <span class="card-date">{{ recording.recording_date|date:"M d, Y" }}</span>
-        </div>
-        <h3 class="card-title">{{ recording.title }}</h3>
-        {% if recording.description %}
-          <p class="card-description">{{ recording.description }}</p>
-        {% endif %}
-        <div class="card-tags">
-          {% for tag in recording.tags.all %}
-            <span class="card-tag">{{ tag.name }}</span>
-          {% endfor %}
-        </div>
-      </div>
-    </article>
-    </a>
-    {% endfor %}
-  </div>
-
-  {% if is_paginated %}
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-      <li><a href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-    {% endif %}
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-        <li><span class="current">{{ num }}</span></li>
-      {% else %}
-        <li><a href="?page={{ num }}">{{ num }}</a></li>
-      {% endif %}
-    {% endfor %}
-    {% if page_obj.has_next %}
-      <li><a href="?page={{ page_obj.next_page_number }}">Next</a></li>
-    {% endif %}
-  </ul>
-  {% endif %}
+<div class="see-all-section">
+  <a href="{% url 'recording-archive' %}" class="browse-all-link">See all recordings &rarr;</a>
+</div>
 
 {% else %}
-  <p class="empty-state">No recordings yet. Check back soon!</p>
+<div class="recordings-empty">
+  <p>No recordings yet. Check back soon!</p>
+</div>
 {% endif %}
+
 {% endblock %}

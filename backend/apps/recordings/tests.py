@@ -116,210 +116,309 @@ class RecordingModelTests(TestCase):
 # ---------------------------------------------------------------------------
 
 class RecordingListViewTests(TestCase):
-    """Tests 7-19: Recording list view behaviour, template, content, filtering,
-    pagination, and the critical absence of audio player elements."""
+    """Tests for the main recordings page with featured + recent layout."""
 
     @classmethod
     def setUpTestData(cls):
         cls.tag_fiqh = Tag.objects.create(name="Fiqh")
         cls.tag_seerah = Tag.objects.create(name="Seerah")
-        cls.recording = Recording.objects.create(
-            title="Friday Bayan",
-            description="A description of the bayan.",
-            speaker="Mufti Abdur Rahman",
-            audio_file=_make_audio_file("friday.mp3"),
-            recording_date=datetime.date(2025, 2, 28),
+        # Create 5 recordings with staggered dates so ordering is deterministic
+        cls.r1 = _create_recording(
+            title="Oldest Recording", speaker="Speaker A",
+            description="Oldest desc.",
+            recording_date=datetime.date(2025, 1, 1),
         )
-        cls.recording.tags.add(cls.tag_fiqh, cls.tag_seerah)
+        cls.r2 = _create_recording(
+            title="Second Recording", speaker="Speaker B",
+            recording_date=datetime.date(2025, 2, 1),
+        )
+        cls.r3 = _create_recording(
+            title="Third Recording", speaker="Speaker C",
+            recording_date=datetime.date(2025, 3, 1),
+        )
+        cls.r4 = _create_recording(
+            title="Fourth Recording", speaker="Speaker D",
+            recording_date=datetime.date(2025, 4, 1),
+        )
+        cls.r5 = _create_recording(
+            title="Featured Recording", speaker="Mufti Abdur Rahman",
+            description="A description of the featured bayan.",
+            recording_date=datetime.date(2025, 5, 1),
+            tags=[cls.tag_fiqh, cls.tag_seerah],
+        )
         cls.list_url = reverse("recording-list")
 
-    def test_7_list_view_returns_200(self):
-        """7. List view returns HTTP 200."""
+    def test_list_view_returns_200(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
 
-    def test_8_list_view_uses_correct_template(self):
-        """8. List view uses recordings/recording_list.html template."""
+    def test_list_view_uses_correct_template(self):
         response = self.client.get(self.list_url)
         self.assertTemplateUsed(response, "recordings/recording_list.html")
 
-    def test_9_list_view_shows_recording_titles(self):
-        """9. List view displays recording titles."""
+    def test_context_has_featured_recording(self):
+        """featured_recording is the most recent recording."""
         response = self.client.get(self.list_url)
-        self.assertContains(response, self.recording.title)
+        self.assertEqual(response.context["featured_recording"], self.r5)
 
-    def test_10_list_view_shows_recording_speakers(self):
-        """10. List view displays recording speakers."""
+    def test_context_has_recent_recordings(self):
+        """recent_recordings contains the next 3 most recent (not the featured)."""
         response = self.client.get(self.list_url)
-        self.assertContains(response, self.recording.speaker)
+        recent = list(response.context["recent_recordings"])
+        self.assertEqual(len(recent), 3)
+        self.assertEqual(recent[0], self.r4)
+        self.assertEqual(recent[1], self.r3)
+        self.assertEqual(recent[2], self.r2)
 
-    def test_11_list_view_shows_recording_dates(self):
-        """11. List view displays recording dates."""
+    def test_featured_recording_title_displayed(self):
         response = self.client.get(self.list_url)
-        # Template formats date as "M d, Y" e.g. "Feb 28, 2025"
-        formatted_date = "Feb 28, 2025"
-        self.assertContains(response, formatted_date)
+        self.assertContains(response, "Featured Recording")
 
-    def test_12_list_view_shows_tags_on_cards(self):
-        """12. List view shows tags on recording cards."""
+    def test_featured_recording_speaker_displayed(self):
+        response = self.client.get(self.list_url)
+        self.assertContains(response, "Mufti Abdur Rahman")
+
+    def test_featured_recording_date_displayed(self):
+        response = self.client.get(self.list_url)
+        # "F d, Y" format -> "May 01, 2025"
+        self.assertContains(response, "May 01, 2025")
+
+    def test_featured_recording_shows_tags(self):
         response = self.client.get(self.list_url)
         self.assertContains(response, "Fiqh")
         self.assertContains(response, "Seerah")
 
-    def test_13_list_view_does_not_contain_audio_player(self):
-        """13. List view does NOT contain audio player elements.
+    def test_recent_recordings_show_titles(self):
+        response = self.client.get(self.list_url)
+        self.assertContains(response, "Fourth Recording")
+        self.assertContains(response, "Third Recording")
+        self.assertContains(response, "Second Recording")
 
-        The audio player (including <audio tags, .audio-player class, and
-        .play-btn class) should only appear on the detail page, not on
-        the list page.
-        """
+    def test_recent_recordings_link_to_detail_pages(self):
+        response = self.client.get(self.list_url)
+        for rec in [self.r4, self.r3, self.r2]:
+            detail_url = reverse("recording-detail", kwargs={"pk": rec.pk})
+            self.assertContains(response, detail_url)
+
+    def test_see_all_recordings_link_present(self):
+        """'See all recordings' link points to the archive page."""
+        response = self.client.get(self.list_url)
+        archive_url = reverse("recording-archive")
+        self.assertContains(response, archive_url)
+        self.assertContains(response, "See all recordings")
+
+    def test_no_audio_player_on_list_page(self):
         response = self.client.get(self.list_url)
         content = response.content.decode()
         self.assertNotIn("<audio", content,
                          "List view must not contain <audio element")
         self.assertNotIn("audio-player", content,
                          "List view must not contain audio-player class")
-        self.assertNotIn("play-btn", content,
-                         "List view must not contain play-btn class")
 
-    def test_14_each_card_links_to_detail_page(self):
-        """14. Each recording card has a link to its detail page."""
+    def test_no_tag_filter_chips_on_main_page(self):
+        """Main list page should NOT have tag filter chips."""
         response = self.client.get(self.list_url)
-        detail_url = reverse("recording-detail", kwargs={"pk": self.recording.pk})
-        self.assertContains(response, detail_url)
-
-    def test_14b_card_link_is_within_anchor_tag(self):
-        """14b. The detail URL appears inside an <a href=...> tag."""
-        response = self.client.get(self.list_url)
-        detail_url = reverse("recording-detail", kwargs={"pk": self.recording.pk})
         content = response.content.decode()
-        self.assertIn(f'href="{detail_url}"', content)
+        self.assertNotIn("tag-filter", content,
+                         "List view must not contain tag filter chips")
 
 
-class RecordingListViewPaginationTests(TestCase):
-    """Test 15: List view pagination."""
+class RecordingListViewFewRecordingsTests(TestCase):
+    """Tests for the main page with fewer than 4 recordings."""
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.list_url = reverse("recording-list")
-        # Create 15 recordings to test pagination (paginate_by=10)
-        for i in range(15):
-            Recording.objects.create(
-                title=f"Recording {i:02d}",
-                speaker=f"Speaker {i}",
-                audio_file=_make_audio_file(f"rec{i}.mp3"),
+    def test_one_recording_featured_shows_recent_empty(self):
+        """With 1 recording: featured is set, recent is empty."""
+        _create_recording(title="Only One", recording_date=datetime.date(2025, 1, 1))
+        response = self.client.get(reverse("recording-list"))
+        self.assertEqual(response.context["featured_recording"].title, "Only One")
+        self.assertEqual(len(response.context["recent_recordings"]), 0)
+
+    def test_two_recordings_featured_is_newest_recent_has_one(self):
+        """With 2 recordings: featured is newest, recent has 1."""
+        _create_recording(title="Older", recording_date=datetime.date(2025, 1, 1))
+        r2 = _create_recording(title="Newer", recording_date=datetime.date(2025, 2, 1))
+        response = self.client.get(reverse("recording-list"))
+        self.assertEqual(response.context["featured_recording"], r2)
+        recent = list(response.context["recent_recordings"])
+        self.assertEqual(len(recent), 1)
+
+    def test_five_recordings_recent_has_three_not_four(self):
+        """With 5 recordings: featured is newest, recent has exactly 3."""
+        for i in range(5):
+            _create_recording(
+                title=f"Rec {i}",
                 recording_date=datetime.date(2025, 1, 1) + datetime.timedelta(days=i),
             )
-
-    def test_15_pagination_page1_has_10_recordings(self):
-        """15a. Page 1 has 10 recordings."""
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["recordings"]), 10)
-
-    def test_15_pagination_page2_has_5_recordings(self):
-        """15b. Page 2 has 5 recordings."""
-        response = self.client.get(self.list_url + "?page=2")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["recordings"]), 5)
-
-    def test_15_pagination_is_paginated_flag(self):
-        """15c. Context has is_paginated=True when items exceed paginate_by."""
-        response = self.client.get(self.list_url)
-        self.assertTrue(response.context["is_paginated"])
+        response = self.client.get(reverse("recording-list"))
+        recent = list(response.context["recent_recordings"])
+        self.assertEqual(len(recent), 3)
 
 
-class RecordingListViewFilterTests(TestCase):
-    """Tests 16-17: List view filtering by tag slug and speaker."""
+class RecordingArchiveViewTests(TestCase):
+    """Tests for the archive page at /recordings/all/."""
 
     @classmethod
     def setUpTestData(cls):
-        cls.list_url = reverse("recording-list")
         cls.tag_dhikr = Tag.objects.create(name="Dhikr")
         cls.tag_fiqh = Tag.objects.create(name="Fiqh")
 
-        cls.r1 = Recording.objects.create(
-            title="Dhikr Session",
-            speaker="Speaker A",
-            audio_file=_make_audio_file("dhikr.mp3"),
-            recording_date=datetime.date(2025, 3, 1),
-        )
-        cls.r1.tags.add(cls.tag_dhikr)
+        cls.recordings = []
+        for i in range(15):
+            rec = _create_recording(
+                title=f"Archive Recording {i:02d}",
+                speaker=f"Speaker {chr(65 + i % 3)}",
+                recording_date=datetime.date(2025, 1, 1) + datetime.timedelta(days=i),
+            )
+            cls.recordings.append(rec)
 
-        cls.r2 = Recording.objects.create(
-            title="Fiqh Lesson",
-            speaker="Speaker B",
-            audio_file=_make_audio_file("fiqh.mp3"),
-            recording_date=datetime.date(2025, 3, 2),
-        )
-        cls.r2.tags.add(cls.tag_fiqh)
+        # Tag the first 5 with Dhikr, next 5 with Fiqh
+        for rec in cls.recordings[:5]:
+            rec.tags.add(cls.tag_dhikr)
+        for rec in cls.recordings[5:10]:
+            rec.tags.add(cls.tag_fiqh)
 
-        cls.r3 = Recording.objects.create(
-            title="Another Dhikr",
-            speaker="Speaker A",
-            audio_file=_make_audio_file("dhikr2.mp3"),
-            recording_date=datetime.date(2025, 3, 3),
-        )
-        cls.r3.tags.add(cls.tag_dhikr)
+        cls.archive_url = reverse("recording-archive")
 
-    def test_16_filter_by_tag_slug(self):
-        """16. List view filters recordings by tag slug query parameter."""
-        response = self.client.get(self.list_url + "?tag=dhikr")
+    def test_archive_returns_200(self):
+        response = self.client.get(self.archive_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_archive_url_name_resolves(self):
+        """URL name 'recording-archive' resolves to /recordings/all/."""
+        url = reverse("recording-archive")
+        self.assertEqual(url, "/recordings/all/")
+
+    def test_archive_uses_correct_template(self):
+        response = self.client.get(self.archive_url)
+        self.assertTemplateUsed(response, "recordings/recording_archive.html")
+
+    def test_archive_context_has_recordings(self):
+        response = self.client.get(self.archive_url)
+        self.assertIn("recordings", response.context)
+
+    def test_archive_context_has_tags(self):
+        response = self.client.get(self.archive_url)
+        self.assertIn("tags", response.context)
+
+    def test_all_recording_titles_appear_across_pages(self):
+        """All 15 recording titles appear across page 1 and page 2."""
+        page1 = self.client.get(self.archive_url)
+        page2 = self.client.get(self.archive_url + "?page=2")
+        combined = page1.content.decode() + page2.content.decode()
+        for rec in self.recordings:
+            self.assertIn(rec.title, combined)
+
+    def test_archive_cards_link_to_detail_pages(self):
+        response = self.client.get(self.archive_url)
+        for rec in response.context["recordings"]:
+            detail_url = reverse("recording-detail", kwargs={"pk": rec.pk})
+            self.assertContains(response, detail_url)
+
+    def test_archive_pagination(self):
+        """15 recordings, 10 per page: page 1 has 10, page 2 has 5."""
+        page1 = self.client.get(self.archive_url)
+        self.assertEqual(len(page1.context["recordings"]), 10)
+        page2 = self.client.get(self.archive_url + "?page=2")
+        self.assertEqual(len(page2.context["recordings"]), 5)
+
+    def test_tag_filter_chips_shown(self):
+        """Archive page displays tag filter chips."""
+        response = self.client.get(self.archive_url)
+        self.assertContains(response, "Dhikr")
+        self.assertContains(response, "Fiqh")
+
+    def test_tag_filtering_works(self):
+        """Filtering by tag slug returns only matching recordings."""
+        response = self.client.get(self.archive_url + "?tag=dhikr")
         self.assertEqual(response.status_code, 200)
         recordings = list(response.context["recordings"])
-        self.assertEqual(len(recordings), 2)
+        self.assertEqual(len(recordings), 5)
         for rec in recordings:
             self.assertIn(self.tag_dhikr, rec.tags.all())
 
-    def test_16b_filter_by_tag_excludes_unmatched(self):
-        """16b. Filtering by tag excludes recordings without that tag."""
-        response = self.client.get(self.list_url + "?tag=fiqh")
-        recordings = list(response.context["recordings"])
-        self.assertEqual(len(recordings), 1)
-        self.assertEqual(recordings[0], self.r2)
-
-    def test_17_filter_by_speaker(self):
-        """17. List view filters recordings by speaker query parameter."""
-        response = self.client.get(self.list_url + "?speaker=Speaker+A")
+    def test_invalid_tag_returns_empty(self):
+        """Filtering by a non-existent tag returns no recordings."""
+        response = self.client.get(self.archive_url + "?tag=nonexistent")
         self.assertEqual(response.status_code, 200)
-        recordings = list(response.context["recordings"])
-        self.assertEqual(len(recordings), 2)
-        for rec in recordings:
-            self.assertEqual(rec.speaker, "Speaker A")
+        self.assertEqual(len(response.context["recordings"]), 0)
 
-    def test_17b_filter_by_speaker_excludes_unmatched(self):
-        """17b. Filtering by speaker excludes recordings by other speakers."""
-        response = self.client.get(self.list_url + "?speaker=Speaker+B")
-        recordings = list(response.context["recordings"])
-        self.assertEqual(len(recordings), 1)
-        self.assertEqual(recordings[0], self.r2)
+    def test_search_link_present_on_archive_page(self):
+        """Archive page contains a link to the search page."""
+        response = self.client.get(self.archive_url)
+        search_url = reverse("recording-search")
+        self.assertContains(response, search_url)
+
+    def test_back_to_recordings_link_present(self):
+        """Archive page has a 'Back to recordings' link."""
+        response = self.client.get(self.archive_url)
+        list_url = reverse("recording-list")
+        self.assertContains(response, list_url)
+        self.assertContains(response, "Back to recordings")
 
 
 class RecordingListViewEmptyAndContextTests(TestCase):
-    """Tests 18-19: Empty list view and context contents."""
+    """Tests for the main list page when there are no recordings."""
 
-    def test_18_empty_list_view_returns_200(self):
-        """18. List view returns 200 even when there are no recordings."""
+    def test_empty_returns_200(self):
+        """Empty list view returns HTTP 200."""
         self.assertEqual(Recording.objects.count(), 0)
         response = self.client.get(reverse("recording-list"))
         self.assertEqual(response.status_code, 200)
 
-    def test_19_list_view_context_contains_tags_and_recordings(self):
-        """19. List view context contains 'tags' and 'recordings' keys."""
-        Tag.objects.create(name="SomeTag")
-        _create_recording(title="Context Test")
+    def test_empty_shows_no_recordings_message(self):
+        """Empty list view displays 'No recordings yet' message."""
         response = self.client.get(reverse("recording-list"))
-        self.assertIn("tags", response.context)
-        self.assertIn("recordings", response.context)
+        self.assertContains(response, "No recordings yet")
 
-    def test_19b_context_tags_contains_all_tags(self):
-        """19b. The 'tags' context variable contains all Tag objects."""
-        t1 = Tag.objects.create(name="Alpha")
-        t2 = Tag.objects.create(name="Beta")
+    def test_empty_featured_recording_is_none(self):
+        """When empty, featured_recording is None."""
         response = self.client.get(reverse("recording-list"))
-        context_tags = list(response.context["tags"])
-        self.assertIn(t1, context_tags)
-        self.assertIn(t2, context_tags)
+        self.assertIsNone(response.context["featured_recording"])
+
+
+class RecordingArchiveSearchIntegrationTests(TestCase):
+    """Tests for search integration with the archive/recordings pages."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.tag = Tag.objects.create(name="Dhikr")
+        cls.r1 = _create_recording(
+            title="Morning Dhikr Session",
+            speaker="Sheikh Ahmad",
+            description="A morning session.",
+            recording_date=datetime.date(2025, 3, 1),
+            tags=[cls.tag],
+        )
+        cls.r2 = _create_recording(
+            title="Fiqh Lesson",
+            speaker="Mufti Bilal",
+            description="An advanced fiqh lesson.",
+            recording_date=datetime.date(2025, 3, 2),
+        )
+        cls.search_url = reverse("recording-search")
+
+    def test_search_page_returns_200(self):
+        response = self.client.get(self.search_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_search_with_query_returns_matching_results(self):
+        response = self.client.get(self.search_url + "?q=Dhikr")
+        self.assertEqual(response.status_code, 200)
+        recordings = list(response.context["recordings"])
+        self.assertEqual(len(recordings), 1)
+        self.assertEqual(recordings[0], self.r1)
+
+    def test_search_with_no_query_returns_no_results(self):
+        response = self.client.get(self.search_url)
+        recordings = list(response.context["recordings"])
+        self.assertEqual(len(recordings), 0)
+
+    def test_search_filters_by_tag(self):
+        """Search with a tag param filters results by that tag."""
+        response = self.client.get(self.search_url + "?q=Session&tag=dhikr")
+        recordings = list(response.context["recordings"])
+        self.assertEqual(len(recordings), 1)
+        self.assertEqual(recordings[0], self.r1)
 
 
 # ---------------------------------------------------------------------------

@@ -67,142 +67,54 @@ function updateTagDisplay(){
 </script>
 {% endif %}
 
-{% if tags %}
-<div class="filters-bar">
-  <span class="filter-label">Browse by topic:</span>
-  <div class="tag-filters">
-    <a href="{% url 'writing-list' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
-    {% for tag in tags %}
-      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-{% if writings %}
-  <div class="writings-grid">
-    {% for writing in writings %}
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-date">{{ writing.published_date|date:"M d, Y" }}</span>
-        </div>
-        <div class="card-tags">
-          {% for tag in writing.tags.all %}
-            <span class="card-tag">{{ tag.name }}</span>
-          {% endfor %}
-        </div>
-        <h3 class="card-title">
-          <a href="{% url 'writing-detail' writing.pk %}">{{ writing.title }}</a>
-        </h3>
-        <p class="card-description writing-excerpt">{{ writing.body|truncatewords:40 }}</p>
-        <a href="{% url 'writing-detail' writing.pk %}" class="read-more-link">Read more &rarr;</a>
+{% if featured_writing %}
+<div class="writings-layout">
+  <div class="writings-main">
+    <article class="featured-writing">
+      <div class="featured-writing-tags">
+        {% for tag in featured_writing.tags.all %}
+          <span class="card-tag">{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+      <h1 class="featured-writing-title">{{ featured_writing.title }}</h1>
+      <div class="featured-writing-date">
+        <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+        {{ featured_writing.published_date|date:"F d, Y" }}
+      </div>
+      <div class="featured-writing-body">
+        {{ featured_writing.body|linebreaks }}
       </div>
     </article>
-    {% endfor %}
   </div>
 
-  {% if is_paginated %}
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-      <li><a href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+  <aside class="writings-sidebar">
+    <h3 class="sidebar-heading">Recent Writings</h3>
+    {% if recent_writings %}
+    <ul class="sidebar-writings-list">
+      {% for writing in recent_writings %}
+      <li>
+        <a href="{% url 'writing-detail' writing.pk %}" class="sidebar-writing-item">
+          <span class="sidebar-writing-num">{{ forloop.counter }}</span>
+          <span class="sidebar-writing-text">
+            <span class="sidebar-writing-title">{{ writing.title }}</span>
+            <span class="sidebar-writing-date">{{ writing.published_date|date:"M d, Y" }}</span>
+          </span>
+          <svg class="sidebar-writing-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="sidebar-empty">No other writings yet.</p>
     {% endif %}
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-        <li><span class="current">{{ num }}</span></li>
-      {% else %}
-        <li><a href="?page={{ num }}">{{ num }}</a></li>
-      {% endif %}
-    {% endfor %}
-    {% if page_obj.has_next %}
-      <li><a href="?page={{ page_obj.next_page_number }}">Next</a></li>
-    {% endif %}
-  </ul>
-  {% endif %}
+    <a href="{% url 'writing-archive' %}" class="browse-all-link">Browse all writings &rarr;</a>
+  </aside>
+</div>
 
 {% else %}
-  <div class="writings-grid">
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Spiritual Reflection</span>
-          <span class="card-date">Mar 3, 2026</span>
-        </div>
-        <h3 class="card-title">The Sweetness of Sabr</h3>
-        <p class="card-description writing-excerpt">Patience is not merely the absence of complaint. It is the deep trust that Allah's plan is unfolding exactly as it should. The one who plants seeds of sabr in the garden of the heart will harvest fruits of peace that no worldly comfort can match. Every trial is a conversation between you and your Lord...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Motivation</span>
-          <span class="card-date">Feb 25, 2026</span>
-        </div>
-        <h3 class="card-title">Rise Before the Sun</h3>
-        <p class="card-description writing-excerpt">The hours before Fajr hold a secret that the sleeping world will never know. In the stillness of the last third of the night, when the world is quiet and the soul is awake, there is a door open between heaven and earth. Those who rise will find it...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Du'a &amp; Dhikr</span>
-          <span class="card-date">Feb 18, 2026</span>
-        </div>
-        <h3 class="card-title">Morning Adhkar: A Shield for Your Day</h3>
-        <p class="card-description writing-excerpt">The Prophet (SAW) never left the morning adhkar. These simple words are a fortress around the believer, a shield against anxiety, a light through darkness. Begin each day by remembering the One who gave you that day...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Advice</span>
-          <span class="card-date">Feb 10, 2026</span>
-        </div>
-        <h3 class="card-title">Guard Your Tongue, Guard Your Heart</h3>
-        <p class="card-description writing-excerpt">The tongue is small but its consequences are enormous. A single word of backbiting can erase a month of worship. A single word of kindness can plant a tree in Jannah. The wise one speaks little and reflects much, for silence is the garden where wisdom grows...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Daily Reminder</span>
-          <span class="card-date">Feb 3, 2026</span>
-        </div>
-        <h3 class="card-title">You Are Never Alone</h3>
-        <p class="card-description writing-excerpt">When the world feels heavy and the path feels long, remember: Allah is closer to you than your jugular vein. He hears the prayer you haven't yet spoken. He sees the tear you haven't yet shed. Turn to Him and find that He was already turned towards you...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-    <article class="writing-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">Spiritual Reflection</span>
-          <span class="card-date">Jan 27, 2026</span>
-        </div>
-        <h3 class="card-title">The Gift of Gratitude</h3>
-        <p class="card-description writing-excerpt">Shukr is not just saying Alhamdulillah with the tongue. It is feeling it in the bones. It is seeing the mercy in the test and the blessing in the breath. When you thank Allah for what you have, He opens doors you never knew existed...</p>
-        <span class="read-more-link">Read more &rarr;</span>
-      </div>
-    </article>
-
-  </div>
+<div class="writings-empty">
+  <p>No writings yet. Check back soon for spiritual reflections and wisdom.</p>
+</div>
 {% endif %}
 
 {% endblock %}

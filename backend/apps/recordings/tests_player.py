@@ -34,15 +34,14 @@ class RecordingCardClickableTests(TestCase):
         self.list_url = reverse("recording-list")
 
     def test_card_is_wrapped_in_anchor(self):
-        """The recording-card should be wrapped in (or be) an <a> tag linking to detail."""
+        """The recording should have a clickable link to the detail page."""
         response = self.client.get(self.list_url)
         html = response.content.decode()
         detail_url = reverse("recording-detail", args=[self.recording.pk])
-        # There should be an <a> wrapping the card that links to the detail page
+        # The featured recording's "Listen Now" link should point to the detail page
         self.assertIn(f'href="{detail_url}"', html)
-        # The card-body content should be inside a link to the detail page
-        # Check that the card link wraps the card content (not just the title)
-        self.assertIn('recording-card-link', html)
+        # The featured layout uses a play link (featured-recording-play)
+        self.assertIn('featured-recording-play', html)
 
     def test_card_link_contains_title(self):
         response = self.client.get(self.list_url)

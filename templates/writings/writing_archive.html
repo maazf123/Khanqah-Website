@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block nav_writings %}active{% endblock %}
+
+{% block hero_content %}
+<h2>All Writings</h2>
+<p>Browse the complete collection of writings and reflections.</p>
+<span class="ornament"></span>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'writing-list' %}" class="detail-back">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  Back to writings
+</a>
+
+{% if tags %}
+<div class="filters-bar">
+  <span class="filter-label">Browse by topic:</span>
+  <div class="tag-filters">
+    <a href="{% url 'writing-archive' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
+    {% for tag in tags %}
+      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if writings %}
+  <div class="writings-grid">
+    {% for writing in writings %}
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-date">{{ writing.published_date|date:"M d, Y" }}</span>
+        </div>
+        <div class="card-tags">
+          {% for tag in writing.tags.all %}
+            <span class="card-tag">{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+        <h3 class="card-title">
+          <a href="{% url 'writing-detail' writing.pk %}">{{ writing.title }}</a>
+        </h3>
+        <p class="card-description writing-excerpt">{{ writing.body|truncatewords:40 }}</p>
+        <a href="{% url 'writing-detail' writing.pk %}" class="read-more-link">Read more &rarr;</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?page={{ page_obj.previous_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">Previous</a></li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li><span class="current">{{ num }}</span></li>
+      {% else %}
+        <li><a href="?page={{ num }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a href="?page={{ page_obj.next_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">Next</a></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+
+{% else %}
+  <div class="writings-empty">
+    <p>No writings found.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

@@ -18,6 +18,23 @@ class RecordingListView(ListView):
     model = Recording
     template_name = "recordings/recording_list.html"
     context_object_name = "recordings"
+
+    def get_queryset(self):
+        return Recording.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = self.get_queryset()
+        context["featured_recording"] = qs.first()
+        context["recent_recordings"] = qs[1:4]
+        context["tags"] = Tag.objects.all()
+        return context
+
+
+class RecordingArchiveView(ListView):
+    model = Recording
+    template_name = "recordings/recording_archive.html"
+    context_object_name = "recordings"
     paginate_by = 10
 
     def get_queryset(self):

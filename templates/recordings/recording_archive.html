@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block nav_recordings %}active{% endblock %}
+
+{% block hero_content %}
+<h2>All Recordings</h2>
+<p>Browse the complete collection of audio recordings.</p>
+<span class="ornament"></span>
+{% endblock %}
+
+{% block content %}
+
+<div class="archive-top-bar">
+  <a href="{% url 'recording-list' %}" class="detail-back">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to recordings
+  </a>
+  <a href="{% url 'recording-search' %}" class="archive-search-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Search recordings
+  </a>
+</div>
+
+{% if tags %}
+<div class="filters-bar">
+  <span class="filter-label">Browse by topic:</span>
+  <div class="tag-filters">
+    <a href="{% url 'recording-archive' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
+    {% for tag in tags %}
+      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if recordings %}
+  <div class="recordings-grid">
+    {% for recording in recordings %}
+    <a href="{% url 'recording-detail' recording.pk %}" class="recording-card-link">
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker">
+            <span class="speaker-avatar">{{ recording.speaker|make_list|first }}</span>
+            {{ recording.speaker }}
+          </div>
+          <span class="card-date">{{ recording.recording_date|date:"M d, Y" }}</span>
+        </div>
+        <h3 class="card-title">{{ recording.title }}</h3>
+        {% if recording.description %}
+          <p class="card-description">{{ recording.description }}</p>
+        {% endif %}
+        <div class="card-tags">
+          {% for tag in recording.tags.all %}
+            <span class="card-tag">{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?page={{ page_obj.previous_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">Previous</a></li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li><span class="current">{{ num }}</span></li>
+      {% else %}
+        <li><a href="?page={{ num }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a href="?page={{ page_obj.next_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">Next</a></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+
+{% else %}
+  <p class="empty-state">No recordings found.</p>
+{% endif %}
+
+{% endblock %}
