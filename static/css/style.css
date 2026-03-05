@@ -284,10 +284,9 @@ a {
 .calligraphy-strip {
   background: var(--cream);
   text-align: center;
-  padding: 0.6rem 0;
+  padding: 0.6rem 1rem;
   position: relative;
   overflow: hidden;
-  white-space: nowrap;
 }
 
 .calligraphy-strip::before,
@@ -313,12 +312,23 @@ a {
   font-size: 2.2rem;
   font-weight: 700;
   color: var(--copper);
-  letter-spacing: 8px;
   word-spacing: 24px;
   display: inline-block;
   padding: 0 2rem;
   background: var(--cream);
   position: relative;
+}
+
+@media (max-width: 600px) {
+  .calligraphy-strip::before {
+    display: none;
+  }
+  .calligraphy-text {
+    font-size: 1.4rem;
+    word-spacing: 12px;
+    padding: 0 1rem;
+    background: none;
+  }
 }
 
 /* ===== MAIN CONTENT ===== */
@@ -512,9 +522,14 @@ a {
 
 /* ===== RECORDINGS GRID ===== */
 .recordings-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 1.5rem;
+}
+
+.recordings-grid > .recording-card-link {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
 }
 
 /* ===== RECORDING CARD ===== */
@@ -531,6 +546,9 @@ a {
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid rgba(107, 58, 42, 0.06);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .recording-card:hover {
@@ -545,6 +563,9 @@ a {
 
 .card-body {
   padding: 1.25rem 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-meta {
@@ -608,6 +629,7 @@ a {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: auto;
   margin-bottom: 1rem;
 }
 
@@ -2843,7 +2865,10 @@ a {
     padding: 1.25rem 1.5rem;
   }
 
-  .recordings-grid,
+  .recordings-grid {
+    flex-direction: column;
+  }
+
   .writings-grid,
   .livestream-grid {
     grid-template-columns: 1fr;

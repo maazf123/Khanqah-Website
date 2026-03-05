@@ -40,7 +40,13 @@
       "Bash(# Get the full windowsState to see what windows VS Code is trying to restore\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/globalStorage/storage.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nws = data.get\\('windowsState', {}\\)\nprint\\(json.dumps\\(ws, indent=2\\)[:3000]\\)\n\" 2>/dev/null)",
       "Bash(# Check VS Code terminal profiles configuration\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/settings.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nfor k, v in data.items\\(\\):\n    print\\(f'{k}: {json.dumps\\(v\\)}'\\)\n\" 2>/dev/null)",
       "Bash(# Search VS Code storage for claude-related entries\ncat \"/c/Users/Saad/AppData/Roaming/Code/User/globalStorage/storage.json\" 2>/dev/null | python3 -c \"\nimport sys, json\ndata = json.load\\(sys.stdin\\)\nfor k, v in data.items\\(\\):\n    s = json.dumps\\(v\\) if not isinstance\\(v, str\\) else v\n    if 'claude' in k.lower\\(\\) or 'claude' in s.lower\\(\\):\n        print\\(f'{k}: {s[:300]}'\\)\n\" 2>/dev/null)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(ngrok version:*)",
+      "Bash(choco:*)",
+      "Bash(winget install:*)",
+      "Bash(\"/c/Users/Saad/AppData/Local/ngrok/ngrok.exe\" config:*)",
+      "Bash(\"$NGROK\" config:*)",
+      "Bash(\"$NGROK\" update:*)"
     ]
   }
 }
