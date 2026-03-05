@@ -6,7 +6,7 @@
   <title>{% block title %}Khanqah e Ashrafiyyah Akhtariyyah{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Vollkorn:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Vollkorn:wght@400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
@@ -14,12 +14,22 @@
 
   {% block hero %}
   <section class="hero">
-    <div class="hero-bg"></div>
+    <div class="hero-bg">
+      <img src="{% static 'img/gold_quran_manuscript.jpg' %}" alt="" class="hero-bg-image">
+    </div>
     <nav class="navbar">
       <div class="navbar-inner">
         <a href="{% url 'home' %}" class="navbar-brand">
-          <span class="brand-name">Khanqah e Ashrafiyyah</span>
-          <span class="brand-sub">Al Hamid Foundation</span>
+          <svg class="brand-arches" width="36" height="32" viewBox="0 0 120 100" fill="none">
+            <path d="M20 95 V45 Q20 10 40 10 Q60 10 60 45 V95" stroke="url(#arch-grad)" stroke-width="5" fill="none"/>
+            <path d="M40 95 V40 Q40 5 60 5 Q80 5 80 40 V95" stroke="url(#arch-grad)" stroke-width="5" fill="none"/>
+            <path d="M60 95 V45 Q60 10 80 10 Q100 10 100 45 V95" stroke="url(#arch-grad)" stroke-width="5" fill="none"/>
+            <defs><linearGradient id="arch-grad" x1="0" y1="0" x2="120" y2="100" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#D4A574"/><stop offset="100%" stop-color="#8B5A42"/></linearGradient></defs>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-name">Khanqah e Ashrafiyyah</span>
+            <span class="brand-sub">Al Hamid Foundation</span>
+          </div>
         </a>
         <ul class="nav-links">
           <li><a href="{% url 'home' %}" class="{% block nav_home %}{% endblock %}">Home</a></li>
@@ -46,6 +56,10 @@
     <div class="hero-fade"></div>
   </section>
   {% endblock %}
+
+  <div class="calligraphy-strip">
+    <span class="calligraphy-text" dir="rtl" lang="ar">۞&ensp;خانقاہ اشرفیہ اختریہ&ensp;۞</span>
+  </div>
 
   <main class="main-content">
     {% block content %}{% endblock %}

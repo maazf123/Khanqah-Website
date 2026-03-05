@@ -17,7 +17,10 @@
       "Bash(docker-compose restart:*)",
       "Bash(docker-compose up:*)",
       "WebFetch(domain:miftaah.org)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "WebSearch",
+      "WebFetch(domain:www.khanqah.org)"
     ]
   }
 }
