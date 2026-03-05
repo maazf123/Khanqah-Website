@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Listening: {{ livestream.title }} - Al Hamid Foundation{% endblock %}
+{% block nav_live %}active{% endblock %}
+
+{% block content %}
+<a href="{% url 'livestream-list' %}" class="detail-back">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  Back to live streams
+</a>
+
+{% if not livestream.is_active %}
+<div class="detail-card listen-card">
+  <div class="detail-accent broadcast-accent"></div>
+  <div class="detail-body">
+    <div class="listen-header">
+      <h1 class="detail-title">{{ livestream.title }}</h1>
+      <span class="live-badge" id="status-badge" style="background: var(--text-muted); animation: none;">ENDED</span>
+    </div>
+    <div class="ended-state">
+      <p>This stream has ended. Thank you for your interest.</p>
+      <a href="{% url 'livestream-list' %}" class="btn btn-primary">Back to Live Streams</a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="detail-card listen-card">
+  <div class="detail-accent broadcast-accent"></div>
+  <div class="detail-body">
+    <div class="listen-header">
+      <div>
+        <h1 class="detail-title">{{ livestream.title }}</h1>
+        <div class="detail-meta">
+          <span>
+            <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            Started {{ livestream.started_at|timesince }} ago
+          </span>
+        </div>
+      </div>
+      <div class="broadcast-status-group">
+        <span class="live-badge" id="status-badge">CONNECTING</span>
+      </div>
+    </div>
+
+    <div class="listen-body">
+      <p id="status-text" class="broadcast-status-text">Connecting to stream...</p>
+
+      <div id="audio-visualizer" class="audio-visualizer broadcast-visualizer">
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+      </div>
+
+      <div id="audio-player" class="listen-player">
+        <button id="play-btn" class="btn btn-primary listen-play-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Tap to Listen
+        </button>
+        <p id="player-status" class="mic-status"></p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="error-state" style="display:none">
+        <p>Connection lost. The stream may still be active.</p>
+        <button id="reconnect-btn" class="btn btn-primary" onclick="reconnect()">Reconnect</button>
+      </div>
+
+      <!-- Ended State -->
+      <div id="ended-state" class="ended-state" style="display:none">
+        <p>The stream has ended. Thank you for listening.</p>
+        <a href="{% url 'livestream-list' %}" class="btn btn-primary">Back to Live Streams</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const streamKey = "{{ livestream.stream_key }}";
+const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+const wsUrl = `${wsProtocol}//${window.location.host}/ws/stream/${streamKey}/`;
+
+function base64ToUint8Array(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+let ws;
+let mediaSource;
+let sourceBuffer;
+let audioQueue = [];
+let audioElement;
+let initSegment = null;
+let isPlaying = false;
+let wasConnected = false;
+
+function connectWebSocket() {
+  document.getElementById("error-state").style.display = "none";
+  document.getElementById("ended-state").style.display = "none";
+  document.getElementById("audio-player").style.display = "block";
+  document.getElementById("status-badge").textContent = "CONNECTING";
+  document.getElementById("status-text").textContent = "Connecting to stream...";
+
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({type: "role", role: "listener"}));
+    wasConnected = true;
+  };
+
+  ws.onmessage = (event) => {
+    let data;
+    try { data = JSON.parse(event.data); } catch (e) { return; }
+
+    if (data.type === "role_confirmed" && data.role === "listener") {
+      document.getElementById("status-badge").textContent = "LIVE";
+      document.getElementById("status-badge").classList.add("live-badge-active");
+      document.getElementById("status-text").textContent = "Stream started {{ livestream.started_at|timesince }} ago";
+      document.getElementById("play-btn").disabled = false;
+      return;
+    }
+
+    if (data.type === "audio") {
+      const bytes = base64ToUint8Array(data.data);
+      if (!initSegment) {
+        initSegment = bytes;
+        console.log('[livestream] init segment received, size:', bytes.byteLength);
+      }
+      if (isPlaying) {
+        startVisualizer();
+        audioQueue.push(bytes);
+        console.log('[livestream] chunk queued, size:', bytes.byteLength, 'queue:', audioQueue.length, 'sb updating:', sourceBuffer?.updating);
+        flushQueue();
+      }
+    }
+  };
+
+  ws.onclose = (event) => {
+    document.getElementById("status-badge").classList.remove("live-badge-active");
+    document.getElementById("play-btn").disabled = true;
+    stopVisualizer();
+
+    if (event.code === 1000 || !wasConnected) {
+      // Normal close or stream doesn't exist — show ended state
+      document.getElementById("status-badge").textContent = "ENDED";
+      document.getElementById("status-text").textContent = "Stream has ended";
+      document.getElementById("audio-player").style.display = "none";
+      document.getElementById("ended-state").style.display = "block";
+    } else {
+      // Abnormal close — show error state with reconnect
+      document.getElementById("status-badge").textContent = "DISCONNECTED";
+      document.getElementById("status-text").textContent = "Connection lost";
+      document.getElementById("audio-player").style.display = "none";
+      document.getElementById("error-state").style.display = "block";
+    }
+  };
+
+  ws.onerror = () => {
+    document.getElementById("status-text").textContent = "Connection error";
+  };
+}
+
+function reconnect() {
+  initSegment = null;
+  audioQueue = [];
+  connectWebSocket();
+}
+
+let needsPlay = false;
+
+function flushQueue() {
+  if (sourceBuffer && !sourceBuffer.updating && audioQueue.length > 0) {
+    try {
+      sourceBuffer.appendBuffer(audioQueue.shift());
+    } catch (e) {
+      console.error('[livestream] appendBuffer error:', e);
+    }
+  }
+}
+
+function togglePlay() {
+  if (!isPlaying) {
+    isPlaying = true;
+    needsPlay = true;
+
+    mediaSource = new MediaSource();
+    audioElement = new Audio();
+    audioElement.volume = 1.0;
+    audioElement.src = URL.createObjectURL(mediaSource);
+    document.body.appendChild(audioElement);
+
+    mediaSource.addEventListener('sourceopen', () => {
+      console.log('[livestream] sourceopen fired');
+      sourceBuffer = mediaSource.addSourceBuffer('audio/webm;codecs=opus');
+      sourceBuffer.mode = 'sequence';
+
+      sourceBuffer.addEventListener('updateend', () => {
+        console.log('[livestream] updateend, buffered:', sourceBuffer.buffered.length > 0 ? sourceBuffer.buffered.end(0).toFixed(2) + 's' : 'empty', 'currentTime:', audioElement?.currentTime.toFixed(2));
+        // Start playback after first chunk is buffered
+        if (needsPlay && audioElement) {
+          needsPlay = false;
+          audioElement.play().then(() => {
+            console.log('[livestream] playback started');
+          }).catch(e => console.error('[livestream] play() error:', e));
+        }
+        flushQueue();
+        // Keep latency low: if buffered ahead by >3s, skip to live edge
+        if (audioElement && sourceBuffer.buffered.length > 0) {
+          const end = sourceBuffer.buffered.end(sourceBuffer.buffered.length - 1);
+          if (end - audioElement.currentTime > 3) {
+            audioElement.currentTime = end - 0.5;
+          }
+        }
+      });
+
+      sourceBuffer.addEventListener('error', (e) => {
+        console.error('[livestream] sourceBuffer error:', e);
+      });
+
+      // For late joiners: feed the cached init segment first
+      if (initSegment && audioQueue.length === 0) {
+        audioQueue.push(initSegment);
+      }
+      flushQueue();
+    });
+
+    document.getElementById("play-btn").textContent = "Listening...";
+    document.getElementById("play-btn").classList.remove("btn-primary");
+    document.getElementById("play-btn").classList.add("btn-secondary");
+    document.getElementById("player-status").textContent = "Receiving audio from broadcaster";
+  } else {
+    isPlaying = false;
+    stopVisualizer();
+
+    if (audioElement) {
+      audioElement.pause();
+      URL.revokeObjectURL(audioElement.src);
+      audioElement.remove();
+      audioElement = null;
+    }
+    if (mediaSource && mediaSource.readyState === 'open') {
+      mediaSource.endOfStream();
+    }
+    mediaSource = null;
+    sourceBuffer = null;
+    audioQueue = [];
+
+    document.getElementById("play-btn").textContent = "Tap to Listen";
+    document.getElementById("play-btn").classList.remove("btn-secondary");
+    document.getElementById("play-btn").classList.add("btn-primary");
+    document.getElementById("player-status").textContent = "";
+  }
+}
+
+document.getElementById("play-btn").addEventListener("click", togglePlay);
+
+/* --- Audio Visualizer --- */
+let vizInterval;
+let vizActive = false;
+function startVisualizer() {
+  if (vizActive) return;
+  vizActive = true;
+  const bars = document.querySelectorAll("#audio-visualizer .viz-bar");
+  document.getElementById("audio-visualizer").classList.add("active");
+  vizInterval = setInterval(() => {
+    bars.forEach(bar => {
+      bar.style.height = (Math.random() * 24 + 4) + "px";
+    });
+  }, 150);
+}
+
+function stopVisualizer() {
+  vizActive = false;
+  clearInterval(vizInterval);
+  document.getElementById("audio-visualizer").classList.remove("active");
+  document.querySelectorAll("#audio-visualizer .viz-bar").forEach(bar => {
+    bar.style.height = "4px";
+  });
+}
+
+connectWebSocket();
+</script>
+{% endif %}
+{% endblock %}

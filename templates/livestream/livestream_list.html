@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Live Streams - Al Hamid Foundation{% endblock %}
+{% block nav_live %}active{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <div class="hero-inner hero-centered">
+    <div class="hero-text">
+      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
+      <h2>Live Broadcasts</h2>
+      <p>Join live sessions from Al Hamid Foundation. Listen to talks, dhikr gatherings, and special events in real time.</p>
+      <span class="ornament"></span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+{% if livestreams %}
+<div class="livestream-grid">
+  {% for stream in livestreams %}
+  <a href="{% url 'livestream-listen' stream_key=stream.stream_key %}" class="livestream-card">
+    <div class="livestream-card-accent"></div>
+    <div class="card-body">
+      <div class="card-meta">
+        <span class="live-badge live-badge-active">LIVE</span>
+        <span class="card-date">Started {{ stream.started_at|timesince }} ago</span>
+      </div>
+      <h3 class="card-title">{{ stream.title }}</h3>
+      <div class="livestream-card-visualizer">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span class="livestream-listen-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Listen Now
+      </span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="livestream-empty">
+  <div class="livestream-empty-icon">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+  </div>
+  <h3>No live streams right now</h3>
+  <p>Check back later for live broadcasts from Al Hamid Foundation.</p>
+</div>
+{% endif %}
+{% endblock %}

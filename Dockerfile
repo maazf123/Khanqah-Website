@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the project
 COPY . .
 
+RUN cd backend && DJANGO_SECRET_KEY=build-placeholder POSTGRES_DB=x POSTGRES_USER=x POSTGRES_PASSWORD=x python manage.py collectstatic --noinput
+
 EXPOSE 8000
 
-CMD ["python", "backend/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["bash", "-c", "cd backend && daphne -b 0.0.0.0 -p 8000 config.asgi:application"]

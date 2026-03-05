@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block nav_writings %}active{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <div class="hero-inner hero-centered">
+    <div class="hero-text">
+      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
+      <h2>Writings &amp; Reflections</h2>
+      <p>Spiritual guidance, reminders, and wisdom from our beloved scholar.</p>
+      <span class="ornament"></span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+
+{% if user.is_authenticated and user.is_staff %}
+<div class="admin-actions">
+  <button type="button" class="btn-primary" onclick="document.getElementById('add-writing-modal').style.display='flex'">+ Add Writing</button>
+</div>
+
+<div id="add-writing-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add Writing</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('add-writing-modal').style.display='none'">&times;</button>
+    </div>
+    <form method="post" action="{% url 'writing-create' %}" class="modal-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_title">Title</label>
+        <input type="text" name="title" id="id_title" required placeholder="Writing title">
+      </div>
+      <div class="form-group">
+        <label for="id_body">Body</label>
+        <textarea name="body" id="id_body" rows="8" required placeholder="Write your content..."></textarea>
+      </div>
+      {% if tags %}
+      <div class="form-group">
+        <label for="id_tags">Tags <span class="optional-label">(optional)</span></label>
+        <div class="tags-dropdown" onclick="this.classList.toggle('open')">
+          <div class="tags-dropdown-display">
+            <span class="tags-placeholder">Select tags...</span>
+          </div>
+          <svg class="tags-dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="tags-dropdown-menu">
+          {% for tag in tags %}
+          <label class="tags-dropdown-item">
+            <input type="checkbox" name="tags" value="{{ tag.pk }}" onchange="updateTagDisplay()">
+            <span>{{ tag.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Add Writing</button>
+    </form>
+  </div>
+</div>
+<script>
+function updateTagDisplay(){
+  const checked=document.querySelectorAll('.tags-dropdown-menu input:checked');
+  const display=document.querySelector('.tags-dropdown-display');
+  if(checked.length===0){
+    display.innerHTML='<span class="tags-placeholder">Select tags...</span>';
+  } else {
+    display.innerHTML=[...checked].map(c=>'<span class="tags-selected-chip">'+c.nextElementSibling.textContent+'</span>').join('');
+  }
+}
+</script>
+{% endif %}
+
+{% if tags %}
+<div class="filters-bar">
+  <span class="filter-label">Browse by topic:</span>
+  <div class="tag-filters">
+    <a href="{% url 'writing-list' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
+    {% for tag in tags %}
+      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if writings %}
+  <div class="writings-grid">
+    {% for writing in writings %}
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-date">{{ writing.published_date|date:"M d, Y" }}</span>
+        </div>
+        <div class="card-tags">
+          {% for tag in writing.tags.all %}
+            <span class="card-tag">{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+        <h3 class="card-title">
+          <a href="{% url 'writing-detail' writing.pk %}">{{ writing.title }}</a>
+        </h3>
+        <p class="card-description writing-excerpt">{{ writing.body|truncatewords:40 }}</p>
+        <a href="{% url 'writing-detail' writing.pk %}" class="read-more-link">Read more &rarr;</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li><span class="current">{{ num }}</span></li>
+      {% else %}
+        <li><a href="?page={{ num }}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a href="?page={{ page_obj.next_page_number }}">Next</a></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+
+{% else %}
+  <div class="writings-grid">
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Spiritual Reflection</span>
+          <span class="card-date">Mar 3, 2026</span>
+        </div>
+        <h3 class="card-title">The Sweetness of Sabr</h3>
+        <p class="card-description writing-excerpt">Patience is not merely the absence of complaint. It is the deep trust that Allah's plan is unfolding exactly as it should. The one who plants seeds of sabr in the garden of the heart will harvest fruits of peace that no worldly comfort can match. Every trial is a conversation between you and your Lord...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Motivation</span>
+          <span class="card-date">Feb 25, 2026</span>
+        </div>
+        <h3 class="card-title">Rise Before the Sun</h3>
+        <p class="card-description writing-excerpt">The hours before Fajr hold a secret that the sleeping world will never know. In the stillness of the last third of the night, when the world is quiet and the soul is awake, there is a door open between heaven and earth. Those who rise will find it...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Du'a &amp; Dhikr</span>
+          <span class="card-date">Feb 18, 2026</span>
+        </div>
+        <h3 class="card-title">Morning Adhkar: A Shield for Your Day</h3>
+        <p class="card-description writing-excerpt">The Prophet (SAW) never left the morning adhkar. These simple words are a fortress around the believer, a shield against anxiety, a light through darkness. Begin each day by remembering the One who gave you that day...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Advice</span>
+          <span class="card-date">Feb 10, 2026</span>
+        </div>
+        <h3 class="card-title">Guard Your Tongue, Guard Your Heart</h3>
+        <p class="card-description writing-excerpt">The tongue is small but its consequences are enormous. A single word of backbiting can erase a month of worship. A single word of kindness can plant a tree in Jannah. The wise one speaks little and reflects much, for silence is the garden where wisdom grows...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Daily Reminder</span>
+          <span class="card-date">Feb 3, 2026</span>
+        </div>
+        <h3 class="card-title">You Are Never Alone</h3>
+        <p class="card-description writing-excerpt">When the world feels heavy and the path feels long, remember: Allah is closer to you than your jugular vein. He hears the prayer you haven't yet spoken. He sees the tear you haven't yet shed. Turn to Him and find that He was already turned towards you...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+    <article class="writing-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">Spiritual Reflection</span>
+          <span class="card-date">Jan 27, 2026</span>
+        </div>
+        <h3 class="card-title">The Gift of Gratitude</h3>
+        <p class="card-description writing-excerpt">Shukr is not just saying Alhamdulillah with the tongue. It is feeling it in the bones. It is seeing the mercy in the test and the blessing in the breath. When you thank Allah for what you have, He opens doors you never knew existed...</p>
+        <span class="read-more-link">Read more &rarr;</span>
+      </div>
+    </article>
+
+  </div>
+{% endif %}
+
+{% endblock %}

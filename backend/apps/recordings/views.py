@@ -1,8 +1,17 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
-from django.views.generic import DetailView, ListView
+from django.urls import reverse
+from django.views.generic import CreateView, DetailView, ListView
 
 from apps.recordings.models import Recording
 from apps.tags.models import Tag
+
+
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    raise_exception = False
+
+    def test_func(self):
+        return self.request.user.is_staff
 
 
 class RecordingListView(ListView):
@@ -61,3 +70,24 @@ class RecordingSearchView(ListView):
         context["tags"] = Tag.objects.all()
         context["current_tag"] = self.request.GET.get("tag") or None
         return context
+
+
+class RecordingCreateView(StaffRequiredMixin, CreateView):
+    model = Recording
+    template_name = "recordings/recording_form.html"
+    fields = ["title", "description", "audio_file", "tags"]
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["description"].required = False
+        form.fields["tags"].required = False
+        return form
+
+    def form_valid(self, form):
+        from django.utils import timezone
+        form.instance.recording_date = timezone.now().date()
+        form.instance.speaker = self.request.user.get_full_name() or self.request.user.username
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("recording-list")

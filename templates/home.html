@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Al Hamid Foundation{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block hero %}
+{% load static %}
+<section class="hero">
+  <div class="hero-inner">
+    <img src="{% static 'img/logo.webp' %}" alt="Al Hamid Foundation" class="hero-logo">
+    <div class="hero-text">
+      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
+      <h2>Al Hamid Foundation</h2>
+      <p>A spiritual sanctuary for the remembrance of Allah and the purification of the heart.</p>
+      <span class="ornament"></span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+
+<!-- Definition of Khanqah -->
+<div class="home-definition">
+  <div class="home-definition-label">What is a Khanqah?</div>
+  <blockquote class="arabic-quote" dir="rtl" lang="ar">
+    الخانقاه: هي الموضع المعد لنزول الصوفية
+  </blockquote>
+  <p class="quote-source">Durr al-Mukhtar, Imam al-Haskafi</p>
+  <p class="quote-translation">
+    A Khanqah is a sanctuary where seekers of Allah gather for dhikr, spiritual purification, and guidance under a qualified shaykh. For centuries, these centers have nurtured the inner life of the Muslim community.
+  </p>
+</div>
+
+<!-- Feature Cards -->
+<div class="home-features">
+  <a href="{% url 'recording-list' %}" class="home-feature-card">
+    <div class="home-feature-accent"></div>
+    <div class="home-feature-body">
+      <div class="home-feature-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+      <h3>Recordings</h3>
+      <p>Bayaans, dhikr sessions, and spiritual discourses from our mashaikh.</p>
+      <span class="home-feature-link">
+        Browse Library
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </span>
+    </div>
+  </a>
+  <a href="{% url 'writing-list' %}" class="home-feature-card">
+    <div class="home-feature-accent"></div>
+    <div class="home-feature-body">
+      <div class="home-feature-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+        </svg>
+      </div>
+      <h3>Writings</h3>
+      <p>Reflections, translations, and spiritual wisdom for the heart.</p>
+      <span class="home-feature-link">
+        Read More
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </span>
+    </div>
+  </a>
+  <a href="{% url 'livestream-list' %}" class="home-feature-card">
+    <div class="home-feature-accent" style="background: linear-gradient(90deg, #dc2626, var(--gold));"></div>
+    <div class="home-feature-body">
+      <div class="home-feature-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </div>
+      <h3>Live Streams</h3>
+      <p>Join live dhikr gatherings and special programs in real time.</p>
+      <span class="home-feature-link">
+        Tune In
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </span>
+    </div>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block prefooter %}
+<div class="quote-band">
+  <div class="quote-band-inner">
+    <blockquote class="arabic-quote" dir="rtl" lang="ar">
+      إذا مررتم برياض الجنة فارتعوا، قالوا: وما رياض الجنة؟ قال: حِلَق الذكر
+    </blockquote>
+    <p class="quote-translation">
+      "When you pass by the gardens of Paradise, graze therein." They asked, "What are the gardens of Paradise?" He said, "The circles of dhikr."
+    </p>
+    <p class="quote-source">Sunan al-Tirmidhi</p>
+  </div>
+</div>
+{% endblock %}

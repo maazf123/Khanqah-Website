@@ -35,11 +35,21 @@
     <div class="detail-player">
       <audio id="audio-player" src="{{ recording.audio_file.url }}" preload="metadata"></audio>
       <div class="audio-player">
-        <button class="play-btn" onclick="togglePlay(this)">
+        <button class="skip-btn skip-back" id="skip-back" title="Back 10 seconds">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          <span class="skip-label">10</span>
+        </button>
+        <button class="play-btn" id="play-btn">
           <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
         </button>
+        <button class="skip-btn skip-fwd" id="skip-fwd" title="Forward 10 seconds">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+          <span class="skip-label">10</span>
+        </button>
         <div class="player-info">
-          <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+          <div class="progress-bar" id="progress-bar">
+            <div class="progress" style="width: 0%"></div>
+          </div>
           <div class="player-times"><span>0:00</span><span>--:--</span></div>
         </div>
         <button class="volume-btn">
@@ -60,8 +70,10 @@
 <script>
 (function() {
   var audio = document.getElementById("audio-player");
-  var progressBar = document.querySelector(".progress");
+  var progressFill = document.querySelector(".progress");
+  var progressBar = document.getElementById("progress-bar");
   var times = document.querySelectorAll(".player-times span");
+  var playBtn = document.getElementById("play-btn");
 
   function fmt(s) {
     var m = Math.floor(s / 60), sec = Math.floor(s % 60);
@@ -71,17 +83,17 @@
   audio.addEventListener("loadedmetadata", function() { times[1].textContent = fmt(audio.duration); });
   audio.addEventListener("timeupdate", function() {
     times[0].textContent = fmt(audio.currentTime);
-    progressBar.style.width = (audio.currentTime / audio.duration * 100) + "%";
+    progressFill.style.width = (audio.currentTime / audio.duration * 100) + "%";
   });
   audio.addEventListener("ended", function() {
-    var btn = document.querySelector(".play-btn");
-    btn.classList.remove("playing");
-    btn.querySelector("svg").innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+    playBtn.classList.remove("playing");
+    playBtn.querySelector("svg").innerHTML = '<polygon points="5,3 19,12 5,21"/>';
   });
 
-  window.togglePlay = function(btn) {
-    var svg = btn.querySelector("svg");
-    var isPlaying = btn.classList.toggle("playing");
+  // Play/Pause
+  playBtn.addEventListener("click", function() {
+    var svg = playBtn.querySelector("svg");
+    var isPlaying = playBtn.classList.toggle("playing");
     if (isPlaying) {
       audio.play();
       svg.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
@@ -89,7 +101,26 @@
       audio.pause();
       svg.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
     }
-  };
+  });
+
+  // Seekable progress bar
+  progressBar.addEventListener("click", function(e) {
+    var rect = progressBar.getBoundingClientRect();
+    var pct = (e.clientX - rect.left) / rect.width;
+    if (audio.duration) {
+      audio.currentTime = pct * audio.duration;
+    }
+  });
+
+  // Skip back -10 seconds
+  document.getElementById("skip-back").addEventListener("click", function() {
+    audio.currentTime = Math.max(0, audio.currentTime - 10);
+  });
+
+  // Skip forward +10 seconds
+  document.getElementById("skip-fwd").addEventListener("click", function() {
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+  });
 })();
 </script>
 {% endblock %}

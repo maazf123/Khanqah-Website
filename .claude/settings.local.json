@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(pip list:*)",
+      "Bash(DATABASE_HOST=localhost DJANGO_SECRET_KEY=test-secret DJANGO_DEBUG=True POSTGRES_DB=test POSTGRES_USER=test POSTGRES_PASSWORD=test python:*)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings_test python:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:alhamidfoundation.mixlr.com)",
+      "WebFetch(domain:api.mixlr.com)",
+      "Bash(ls:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker-compose restart:*)"
+    ]
+  }
+}

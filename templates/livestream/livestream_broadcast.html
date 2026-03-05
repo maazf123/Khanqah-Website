@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Broadcasting: {{ livestream.title }} - Al Hamid Foundation{% endblock %}
+{% block nav_live %}active{% endblock %}
+
+{% block content %}
+<a href="{% url 'livestream-list' %}" class="detail-back">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  Back to live streams
+</a>
+
+<!-- Countdown Overlay -->
+<div id="countdown-overlay" class="countdown-overlay" style="display:none">
+  <div class="countdown-content">
+    <p>Going live in</p>
+    <span id="countdown-number" class="countdown-number">3</span>
+  </div>
+</div>
+
+<div class="detail-card broadcast-card">
+  <div class="detail-accent broadcast-accent"></div>
+  <div class="detail-body">
+    <div class="broadcast-header">
+      <div>
+        <h1 class="detail-title">{{ livestream.title }}</h1>
+        <div class="detail-meta">
+          <span>
+            <svg class="meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            Started {{ livestream.started_at|timesince }} ago
+          </span>
+        </div>
+      </div>
+      <div class="broadcast-status-group">
+        <span class="live-badge" id="status-badge">CONNECTING</span>
+        <span id="listener-count" class="listener-count">0 listeners</span>
+      </div>
+    </div>
+
+    <div class="broadcast-body">
+      <p id="status-text" class="broadcast-status-text">Connecting to server...</p>
+
+      <div id="audio-visualizer" class="audio-visualizer broadcast-visualizer">
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+        <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+      </div>
+
+      <div id="broadcast-controls" class="broadcast-controls">
+        <button id="mute-btn" class="btn btn-secondary broadcast-mute-btn" style="display:none">
+          <svg id="mute-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          Mute
+        </button>
+        <p id="mic-status" class="mic-status"></p>
+      </div>
+    </div>
+
+    <div class="broadcast-share" id="share-section">
+      <label>Share this link with listeners:</label>
+      <div class="share-link-row">
+        <input type="text" id="listen-url" readonly
+               value="{{ request.scheme }}://{{ request.get_host }}{% url 'livestream-listen' stream_key=livestream.stream_key %}"
+               class="share-link-input">
+        <button onclick="copyLink()" class="btn btn-secondary" id="copy-btn">Copy</button>
+      </div>
+    </div>
+
+    <div class="broadcast-footer">
+      <form method="post" action="{% url 'livestream-stop' stream_key=livestream.stream_key %}" id="stop-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" id="stop-stream-btn">Stop Stream</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const streamKey = "{{ livestream.stream_key }}";
+const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+const wsUrl = `${wsProtocol}//${window.location.host}/ws/stream/${streamKey}/`;
+
+let ws;
+let mediaRecorder;
+let micStream;
+let listenerCount = 0;
+let isMuted = false;
+
+function connectWebSocket() {
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({type: "role", role: "broadcaster"}));
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "role_confirmed" && data.role === "broadcaster") {
+        document.getElementById("status-badge").textContent = "LIVE";
+        document.getElementById("status-badge").classList.add("live-badge-active");
+        document.getElementById("status-text").textContent = "Stream is active";
+        startMic();
+      }
+      if (data.type === "listener_count") {
+        listenerCount = data.count;
+        document.getElementById("listener-count").textContent =
+          listenerCount === 1 ? "1 listener" : listenerCount + " listeners";
+      }
+    } catch (e) {}
+  };
+
+  ws.onclose = () => {
+    document.getElementById("status-badge").textContent = "DISCONNECTED";
+    document.getElementById("status-badge").classList.remove("live-badge-active");
+    document.getElementById("status-text").textContent = "Connection lost";
+    stopVisualizer();
+  };
+
+  ws.onerror = () => {
+    document.getElementById("status-text").textContent = "Connection error";
+  };
+}
+
+/* --- Countdown --- */
+function showCountdown() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("countdown-overlay");
+    const num = document.getElementById("countdown-number");
+    overlay.style.display = "flex";
+    let count = 3;
+    num.textContent = count;
+    const interval = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(interval);
+        overlay.style.display = "none";
+        resolve();
+      } else {
+        num.textContent = count;
+      }
+    }, 1000);
+  });
+}
+
+/* --- Base64 helper --- */
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+/* --- Mic (auto-starts after countdown) --- */
+async function startMic() {
+  await showCountdown();
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    mediaRecorder = new MediaRecorder(micStream, {mimeType: "audio/webm;codecs=opus"});
+
+    mediaRecorder.ondataavailable = async (event) => {
+      if (event.data.size > 0 && ws && ws.readyState === WebSocket.OPEN && !isMuted) {
+        const buffer = await event.data.arrayBuffer();
+        const b64 = arrayBufferToBase64(buffer);
+        ws.send(JSON.stringify({type: "audio", data: b64}));
+      }
+    };
+
+    mediaRecorder.start(100);
+    document.getElementById("mute-btn").style.display = "inline-block";
+    document.getElementById("mic-status").textContent = "Microphone is live — broadcasting audio";
+    startVisualizer();
+  } catch (err) {
+    document.getElementById("mic-status").textContent = "Microphone access denied: " + err.message;
+  }
+}
+
+/* --- Mute Toggle --- */
+function toggleMute() {
+  isMuted = !isMuted;
+  const btn = document.getElementById("mute-btn");
+  if (isMuted) {
+    btn.textContent = "Unmute";
+    btn.classList.remove("btn-secondary");
+    btn.classList.add("btn-danger");
+    document.getElementById("mic-status").textContent = "Microphone muted";
+    stopVisualizer();
+  } else {
+    btn.textContent = "Mute";
+    btn.classList.remove("btn-danger");
+    btn.classList.add("btn-secondary");
+    document.getElementById("mic-status").textContent = "Microphone is live — broadcasting audio";
+    startVisualizer();
+  }
+}
+
+document.getElementById("mute-btn").addEventListener("click", toggleMute);
+
+/* --- Audio Visualizer --- */
+let vizInterval;
+function startVisualizer() {
+  const bars = document.querySelectorAll("#audio-visualizer .viz-bar");
+  document.getElementById("audio-visualizer").classList.add("active");
+  vizInterval = setInterval(() => {
+    bars.forEach(bar => {
+      bar.style.height = (Math.random() * 24 + 4) + "px";
+    });
+  }, 150);
+}
+
+function stopVisualizer() {
+  clearInterval(vizInterval);
+  document.getElementById("audio-visualizer").classList.remove("active");
+  document.querySelectorAll("#audio-visualizer .viz-bar").forEach(bar => {
+    bar.style.height = "4px";
+  });
+}
+
+/* --- Copy Link --- */
+function copyLink() {
+  const input = document.getElementById("listen-url");
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  const btn = document.getElementById("copy-btn");
+  btn.textContent = "Copied!";
+  btn.classList.add("btn-copied");
+  setTimeout(() => {
+    btn.textContent = "Copy";
+    btn.classList.remove("btn-copied");
+  }, 2000);
+}
+
+/* --- Stop Confirmation --- */
+document.getElementById("stop-form").addEventListener("submit", function(e) {
+  if (!confirm("Are you sure you want to stop this stream? All listeners will be disconnected.")) {
+    e.preventDefault();
+  }
+});
+
+connectWebSocket();
+</script>
+{% endblock %}

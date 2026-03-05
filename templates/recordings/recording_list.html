@@ -3,41 +3,101 @@
 {% block nav_recordings %}active{% endblock %}
 
 {% block hero %}
-{% load static %}
 <section class="hero">
-  <img src="{% static 'img/logo.webp' %}" alt="Al Hamid Foundation" class="hero-logo">
-  <div class="hero-tagline">Enlighten | Enrich | Engage</div>
-  <h2>Al Hamid Foundation</h2>
-  <p>KHILAFAT WALE : ABDULLAH SYED MAJZUB</p>
-  <span class="ornament"></span>
+  <div class="hero-inner hero-centered">
+    <div class="hero-text">
+      <div class="hero-tagline">Enlighten | Enrich | Engage</div>
+      <h2>Audio Recordings</h2>
+      <p>Listen to bayaans, dhikr sessions, and spiritual discourses from our respected scholars.</p>
+      <span class="ornament"></span>
+    </div>
+  </div>
 </section>
 {% endblock %}
 
 {% block content %}
 
+{% if user.is_authenticated and user.is_staff %}
+<div class="admin-actions">
+  <button type="button" class="btn-primary" onclick="document.getElementById('add-recording-modal').style.display='flex'">+ Add Recording</button>
+</div>
+
+<div id="add-recording-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add Recording</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('add-recording-modal').style.display='none'">&times;</button>
+    </div>
+    <form method="post" action="{% url 'recording-create' %}" enctype="multipart/form-data" class="modal-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_title">Title</label>
+        <input type="text" name="title" id="id_title" required placeholder="Recording title">
+      </div>
+      <div class="form-group">
+        <label for="id_description">Description <span class="optional-label">(optional)</span></label>
+        <textarea name="description" id="id_description" rows="2" placeholder="Add a description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Audio File</label>
+        <label class="file-upload-btn" for="id_audio_file">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="file-upload-text">Choose audio file</span>
+        </label>
+        <input type="file" name="audio_file" id="id_audio_file" accept="audio/*" required class="file-input-hidden" onchange="document.getElementById('file-upload-text').textContent=this.files[0]?this.files[0].name:'Choose audio file'">
+      </div>
+      {% if tags %}
+      <div class="form-group">
+        <label for="id_tags">Tags <span class="optional-label">(optional)</span></label>
+        <div class="tags-dropdown" onclick="this.classList.toggle('open')">
+          <div class="tags-dropdown-display">
+            <span class="tags-placeholder">Select tags...</span>
+          </div>
+          <svg class="tags-dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="tags-dropdown-menu">
+          {% for tag in tags %}
+          <label class="tags-dropdown-item">
+            <input type="checkbox" name="tags" value="{{ tag.pk }}" onchange="updateTagDisplay()">
+            <span>{{ tag.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Add Recording</button>
+    </form>
+  </div>
+</div>
+<script>
+function updateTagDisplay(){
+  const checked=document.querySelectorAll('.tags-dropdown-menu input:checked');
+  const display=document.querySelector('.tags-dropdown-display');
+  if(checked.length===0){
+    display.innerHTML='<span class="tags-placeholder">Select tags...</span>';
+  } else {
+    display.innerHTML=[...checked].map(c=>'<span class="tags-selected-chip">'+c.nextElementSibling.textContent+'</span>').join('');
+  }
+}
+</script>
+{% endif %}
+
+{% if tags %}
 <div class="filters-bar">
   <span class="filter-label">Browse by topic:</span>
   <div class="tag-filters">
     <a href="{% url 'recording-list' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
-    {% if tags %}
-      {% for tag in tags %}
-        <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
-      {% endfor %}
-    {% else %}
-      <span class="tag-chip">Tassawuf</span>
-      <span class="tag-chip">Dhikr</span>
-      <span class="tag-chip">Fiqh</span>
-      <span class="tag-chip">Seerah</span>
-      <span class="tag-chip">Tazkiyah</span>
-      <span class="tag-chip">Ramadan</span>
-      <span class="tag-chip">Friday Bayaan</span>
-    {% endif %}
+    {% for tag in tags %}
+      <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
+    {% endfor %}
   </div>
 </div>
+{% endif %}
 
 {% if recordings %}
   <div class="recordings-grid">
     {% for recording in recordings %}
+    <a href="{% url 'recording-detail' recording.pk %}" class="recording-card-link">
     <article class="recording-card">
       <div class="card-accent"></div>
       <div class="card-body">
@@ -48,9 +108,7 @@
           </div>
           <span class="card-date">{{ recording.recording_date|date:"M d, Y" }}</span>
         </div>
-        <h3 class="card-title">
-          <a href="{% url 'recording-detail' recording.pk %}">{{ recording.title }}</a>
-        </h3>
+        <h3 class="card-title">{{ recording.title }}</h3>
         {% if recording.description %}
           <p class="card-description">{{ recording.description }}</p>
         {% endif %}
@@ -61,6 +119,7 @@
         </div>
       </div>
     </article>
+    </a>
     {% endfor %}
   </div>
 
@@ -83,86 +142,6 @@
   {% endif %}
 
 {% else %}
-  <div class="recordings-grid">
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">M</span> Mufti Abdur Rahman</div>
-          <span class="card-date">Feb 28, 2026</span>
-        </div>
-        <h3 class="card-title">The Reality of Tawakkul in Daily Life</h3>
-        <p class="card-description">An in-depth discourse on placing true reliance upon Allah in every matter, from livelihood to personal hardships, and how the companions exemplified this noble quality.</p>
-        <div class="card-tags"><span class="card-tag">Tassawuf</span><span class="card-tag">Tazkiyah</span></div>
-      </div>
-    </article>
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">S</span> Shaykh Bilal Hussain</div>
-          <span class="card-date">Feb 21, 2026</span>
-        </div>
-        <h3 class="card-title">Friday Bayaan: Purification of the Heart</h3>
-        <p class="card-description">A powerful reminder on removing spiritual diseases such as envy, pride, and heedlessness, and replacing them with gratitude, humility, and constant remembrance.</p>
-        <div class="card-tags"><span class="card-tag">Friday Bayaan</span><span class="card-tag">Tazkiyah</span></div>
-      </div>
-    </article>
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">M</span> Maulana Tariq Jameel</div>
-          <span class="card-date">Feb 14, 2026</span>
-        </div>
-        <h3 class="card-title">Dhikr Majlis - Evening Session</h3>
-        <p class="card-description">A spiritually uplifting gathering of collective dhikr, including recitation of wird, salawaat upon the Prophet (SAW), and dua for the ummah.</p>
-        <div class="card-tags"><span class="card-tag">Dhikr</span></div>
-      </div>
-    </article>
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">M</span> Mufti Abdur Rahman</div>
-          <span class="card-date">Feb 7, 2026</span>
-        </div>
-        <h3 class="card-title">The Fiqh of Salah - Common Mistakes</h3>
-        <p class="card-description">A detailed explanation of frequently overlooked errors in prayer according to the Hanafi school, with practical guidance on correcting them.</p>
-        <div class="card-tags"><span class="card-tag">Fiqh</span></div>
-      </div>
-    </article>
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">S</span> Shaykh Bilal Hussain</div>
-          <span class="card-date">Jan 31, 2026</span>
-        </div>
-        <h3 class="card-title">Lessons from the Seerah: Patience in Makkah</h3>
-        <p class="card-description">Exploring the early Makkan period and how the Prophet (SAW) and his companions endured persecution with unwavering patience and faith.</p>
-        <div class="card-tags"><span class="card-tag">Seerah</span></div>
-      </div>
-    </article>
-
-    <article class="recording-card">
-      <div class="card-accent"></div>
-      <div class="card-body">
-        <div class="card-meta">
-          <div class="card-speaker"><span class="speaker-avatar">H</span> Hafiz Usman Ahmed</div>
-          <span class="card-date">Jan 24, 2026</span>
-        </div>
-        <h3 class="card-title">Preparing for Ramadan - A Spiritual Roadmap</h3>
-        <p class="card-description">Practical steps and spiritual exercises to prepare the heart and mind for the blessed month, including recommendations for daily routines and worship goals.</p>
-        <div class="card-tags"><span class="card-tag">Ramadan</span><span class="card-tag">Tazkiyah</span></div>
-      </div>
-    </article>
-
-  </div>
+  <p class="empty-state">No recordings yet. Check back soon!</p>
 {% endif %}
 {% endblock %}
