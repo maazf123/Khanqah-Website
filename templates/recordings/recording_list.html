@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block nav_home %}active{% endblock %}
+
+{% block hero %}
+<section class="hero">
+  <h2>Listen. Learn. Reflect.</h2>
+  <p>A curated collection of spiritual discourses, bayaans, and dhikr sessions from our respected scholars.</p>
+  <span class="ornament"></span>
+</section>
+{% endblock %}
+
+{% block content %}
+
+<div class="filters-bar">
+  <span class="filter-label">Browse by topic:</span>
+  <div class="tag-filters">
+    <a href="{% url 'recording-list' %}" class="tag-chip {% if not current_tag %}active{% endif %}">All</a>
+    {% if tags %}
+      {% for tag in tags %}
+        <a href="?tag={{ tag.slug }}" class="tag-chip {% if current_tag == tag.slug %}active{% endif %}">{{ tag.name }}</a>
+      {% endfor %}
+    {% else %}
+      <span class="tag-chip">Tassawuf</span>
+      <span class="tag-chip">Dhikr</span>
+      <span class="tag-chip">Fiqh</span>
+      <span class="tag-chip">Seerah</span>
+      <span class="tag-chip">Tazkiyah</span>
+      <span class="tag-chip">Ramadan</span>
+      <span class="tag-chip">Friday Bayaan</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if recordings %}
+  <div class="recordings-grid">
+    {% for recording in recordings %}
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker">
+            <span class="speaker-avatar">{{ recording.speaker|make_list|first }}</span>
+            {{ recording.speaker }}
+          </div>
+          <span class="card-date">{{ recording.recording_date|date:"M d, Y" }}</span>
+        </div>
+        <h3 class="card-title">
+          <a href="{% url 'recording-detail' recording.pk %}">{{ recording.title }}</a>
+        </h3>
+        {% if recording.description %}
+          <p class="card-description">{{ recording.description }}</p>
+        {% endif %}
+        <div class="card-tags">
+          {% for tag in recording.tags.all %}
+            <span class="card-tag">{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)">
+            <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+            <div class="player-times"><span>0:00</span><span>--:--</span></div>
+          </div>
+          <button class="volume-btn">
+            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          </button>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li><span class="current">{{ num }}</span></li>
+      {% else %}
+        <li><a href="?page={{ num }}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a href="?page={{ page_obj.next_page_number }}">Next</a></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+
+{% else %}
+  <div class="recordings-grid">
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">M</span> Mufti Abdur Rahman</div>
+          <span class="card-date">Feb 28, 2026</span>
+        </div>
+        <h3 class="card-title">The Reality of Tawakkul in Daily Life</h3>
+        <p class="card-description">An in-depth discourse on placing true reliance upon Allah in every matter, from livelihood to personal hardships, and how the companions exemplified this noble quality.</p>
+        <div class="card-tags"><span class="card-tag">Tassawuf</span><span class="card-tag">Tazkiyah</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 35%"></div></div>
+            <div class="player-times"><span>12:40</span><span>36:15</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">S</span> Shaykh Bilal Hussain</div>
+          <span class="card-date">Feb 21, 2026</span>
+        </div>
+        <h3 class="card-title">Friday Bayaan: Purification of the Heart</h3>
+        <p class="card-description">A powerful reminder on removing spiritual diseases such as envy, pride, and heedlessness, and replacing them with gratitude, humility, and constant remembrance.</p>
+        <div class="card-tags"><span class="card-tag">Friday Bayaan</span><span class="card-tag">Tazkiyah</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+            <div class="player-times"><span>0:00</span><span>42:08</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">M</span> Maulana Tariq Jameel</div>
+          <span class="card-date">Feb 14, 2026</span>
+        </div>
+        <h3 class="card-title">Dhikr Majlis - Evening Session</h3>
+        <p class="card-description">A spiritually uplifting gathering of collective dhikr, including recitation of wird, salawaat upon the Prophet (SAW), and dua for the ummah.</p>
+        <div class="card-tags"><span class="card-tag">Dhikr</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 72%"></div></div>
+            <div class="player-times"><span>38:22</span><span>53:10</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">M</span> Mufti Abdur Rahman</div>
+          <span class="card-date">Feb 7, 2026</span>
+        </div>
+        <h3 class="card-title">The Fiqh of Salah - Common Mistakes</h3>
+        <p class="card-description">A detailed explanation of frequently overlooked errors in prayer according to the Hanafi school, with practical guidance on correcting them.</p>
+        <div class="card-tags"><span class="card-tag">Fiqh</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 0%"></div></div>
+            <div class="player-times"><span>0:00</span><span>28:45</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">S</span> Shaykh Bilal Hussain</div>
+          <span class="card-date">Jan 31, 2026</span>
+        </div>
+        <h3 class="card-title">Lessons from the Seerah: Patience in Makkah</h3>
+        <p class="card-description">Exploring the early Makkan period and how the Prophet (SAW) and his companions endured persecution with unwavering patience and faith.</p>
+        <div class="card-tags"><span class="card-tag">Seerah</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 15%"></div></div>
+            <div class="player-times"><span>7:12</span><span>48:30</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+    <article class="recording-card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <div class="card-speaker"><span class="speaker-avatar">H</span> Hafiz Usman Ahmed</div>
+          <span class="card-date">Jan 24, 2026</span>
+        </div>
+        <h3 class="card-title">Preparing for Ramadan - A Spiritual Roadmap</h3>
+        <p class="card-description">Practical steps and spiritual exercises to prepare the heart and mind for the blessed month, including recommendations for daily routines and worship goals.</p>
+        <div class="card-tags"><span class="card-tag">Ramadan</span><span class="card-tag">Tazkiyah</span></div>
+        <div class="audio-player">
+          <button class="play-btn" onclick="togglePlay(this)"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></button>
+          <div class="player-info">
+            <div class="progress-bar"><div class="progress" style="width: 100%"></div></div>
+            <div class="player-times"><span>31:20</span><span>31:20</span></div>
+          </div>
+          <button class="volume-btn"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+{% endif %}
+
+<script>
+function togglePlay(btn) {
+  var svg = btn.querySelector("svg");
+  var isPlaying = btn.classList.toggle("playing");
+  if (isPlaying) {
+    svg.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  } else {
+    svg.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+  }
+}
+</script>
+{% endblock %}

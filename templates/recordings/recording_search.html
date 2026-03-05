@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Search Recordings - Khanqah Website{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-layout {
+        display: flex;
+        gap: 2rem;
+    }
+
+    .sidebar {
+        flex: 0 0 200px;
+    }
+
+    .sidebar h3 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: #5a5046;
+        border-bottom: 1px solid #d4cfc7;
+        padding-bottom: 0.4rem;
+    }
+
+    .sidebar ul {
+        list-style: none;
+    }
+
+    .sidebar ul li {
+        margin-bottom: 0.35rem;
+    }
+
+    .sidebar ul li a {
+        text-decoration: none;
+        color: #4a5e4a;
+        font-size: 0.9rem;
+        padding: 0.2rem 0.5rem;
+        display: block;
+        border-radius: 3px;
+    }
+
+    .sidebar ul li a:hover {
+        background-color: #e0dbd3;
+    }
+
+    .sidebar ul li a.active {
+        background-color: #4a5e4a;
+        color: #ffffff;
+    }
+
+    .main-content {
+        flex: 1;
+    }
+
+    .main-content h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #3b3530;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-form input[type="text"] {
+        flex: 1;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid #d4cfc7;
+        border-radius: 4px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 0.95rem;
+        color: #3b3530;
+        background-color: #ffffff;
+    }
+
+    .search-form input[type="text"]:focus {
+        outline: none;
+        border-color: #4a5e4a;
+        box-shadow: 0 0 0 2px rgba(74, 94, 74, 0.15);
+    }
+
+    .search-form button {
+        padding: 0.6rem 1.2rem;
+        background-color: #4a5e4a;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+
+    .search-form button:hover {
+        background-color: #2e3d2e;
+    }
+
+    .filter-notice {
+        background-color: #e8e4de;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #5a5046;
+    }
+
+    .filter-notice a {
+        margin-left: 0.5rem;
+        color: #8b4513;
+    }
+
+    .recording-card {
+        background-color: #ffffff;
+        border: 1px solid #d4cfc7;
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .recording-card h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+        color: #3b3530;
+    }
+
+    .recording-meta {
+        font-size: 0.85rem;
+        color: #7a7168;
+        margin-bottom: 0.5rem;
+    }
+
+    .recording-meta span {
+        margin-right: 1rem;
+    }
+
+    .tag-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .tag-badge {
+        background-color: #e8e4de;
+        color: #5a5046;
+        padding: 0.15rem 0.55rem;
+        border-radius: 3px;
+        font-size: 0.78rem;
+        text-decoration: none;
+    }
+
+    .tag-badge:hover {
+        background-color: #d4cfc7;
+        color: #3b3530;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #7a7168;
+        padding: 3rem 0;
+        font-style: italic;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #d4cfc7;
+        font-size: 0.9rem;
+    }
+
+    .pagination a {
+        text-decoration: none;
+        color: #4a5e4a;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid #d4cfc7;
+        border-radius: 4px;
+    }
+
+    .pagination a:hover {
+        background-color: #e0dbd3;
+    }
+
+    .pagination .current-page {
+        color: #5a5046;
+    }
+
+    @media (max-width: 640px) {
+        .page-layout {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            flex: none;
+        }
+
+        .search-form {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-layout">
+    <aside class="sidebar">
+        <h3>Filter by Tag</h3>
+        <ul>
+            <li>
+                <a href="?q={{ query }}"{% if not current_tag %} class="active"{% endif %}>All Tags</a>
+            </li>
+            {% for tag in tags %}
+            <li>
+                <a href="?q={{ query }}&tag={{ tag.slug }}"{% if current_tag == tag.slug %} class="active"{% endif %}>
+                    {{ tag.name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <h1>Search Recordings</h1>
+
+        <form class="search-form" method="get" action="">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by title, speaker, or description...">
+            {% if current_tag %}
+            <input type="hidden" name="tag" value="{{ current_tag }}">
+            {% endif %}
+            <button type="submit">Search</button>
+        </form>
+
+        {% if current_tag %}
+        <div class="filter-notice">
+            Filtered by tag: <strong>{{ current_tag }}</strong>
+            <a href="?q={{ query }}">Clear tag filter</a>
+        </div>
+        {% endif %}
+
+        {% if not query %}
+            <p class="empty-message">Enter a search term above.</p>
+        {% elif recordings %}
+            {% for recording in recordings %}
+            <div class="recording-card">
+                <h2><a href="{% url 'recording-detail' recording.pk %}">{{ recording.title }}</a></h2>
+                <div class="recording-meta">
+                    <span>Speaker: {{ recording.speaker }}</span>
+                    <span>Date: {{ recording.recording_date }}</span>
+                </div>
+                {% if recording.tags.all %}
+                <div class="tag-badges">
+                    {% for tag in recording.tags.all %}
+                    <a href="?q={{ query }}&tag={{ tag.slug }}" class="tag-badge">{{ tag.name }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if is_paginated %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                <a href="?q={{ query }}&page={{ page_obj.previous_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                    Previous
+                </a>
+                {% endif %}
+
+                <span class="current-page">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?q={{ query }}&page={{ page_obj.next_page_number }}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <p class="empty-message">No recordings found for '{{ query }}'.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
