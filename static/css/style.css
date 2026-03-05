@@ -658,6 +658,74 @@ body::before {
   color: var(--white);
 }
 
+/* ===== WRITINGS GRID ===== */
+.writings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.writing-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(77, 26, 42, 0.06);
+}
+
+.writing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.writing-category {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--maroon-muted);
+  color: var(--maroon);
+  letter-spacing: 0.3px;
+}
+
+.writing-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.read-more-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--maroon);
+  transition: color 0.2s;
+}
+
+.read-more-link:hover {
+  color: var(--maroon-light);
+}
+
+/* Writing detail */
+.writing-detail-card {
+  max-width: 750px;
+}
+
+.writing-body {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--cream-dark);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.writing-body p {
+  margin-bottom: 1.25rem;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .navbar-inner {

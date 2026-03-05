@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    command: python backend/manage.py runserver 0.0.0.0:8000
+    command: bash -c "python backend/manage.py migrate --noinput && python backend/manage.py seed && python backend/manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:

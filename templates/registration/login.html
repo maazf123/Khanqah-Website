@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Al Hamid Foundation{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 2rem auto;">
+  <div class="detail-card">
+    <div class="detail-accent"></div>
+    <div class="detail-body" style="padding: 2.5rem;">
+      <h2 style="font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Login</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 2rem;">Sign in to access the admin panel.</p>
+
+      {% if form.errors %}
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.5rem; color: #991b1b; font-size: 0.85rem;">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="play-btn" style="width: 100%; border-radius: var(--radius-sm); height: 44px; font-size: 0.9rem; font-weight: 600; font-family: 'Inter', sans-serif; margin-top: 1rem; cursor: pointer;">
+          Login
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

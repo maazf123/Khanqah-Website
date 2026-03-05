@@ -26,13 +26,14 @@
       {% if recording.tags.all %}
       <div class="card-tags" style="margin-top: 1rem;">
         {% for tag in recording.tags.all %}
-          <span class="card-tag">{{ tag.name }}</span>
+          <a href="{% url 'recording-list' %}?tag={{ tag.slug }}" class="card-tag">{{ tag.name }}</a>
         {% endfor %}
       </div>
       {% endif %}
     </div>
 
     <div class="detail-player">
+      <audio id="audio-player" src="{{ recording.audio_file.url }}" preload="metadata"></audio>
       <div class="audio-player">
         <button class="play-btn" onclick="togglePlay(this)">
           <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
@@ -57,14 +58,38 @@
 </div>
 
 <script>
-function togglePlay(btn) {
-  var svg = btn.querySelector("svg");
-  var isPlaying = btn.classList.toggle("playing");
-  if (isPlaying) {
-    svg.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
-  } else {
-    svg.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+(function() {
+  var audio = document.getElementById("audio-player");
+  var progressBar = document.querySelector(".progress");
+  var times = document.querySelectorAll(".player-times span");
+
+  function fmt(s) {
+    var m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ":" + (sec < 10 ? "0" : "") + sec;
   }
-}
+
+  audio.addEventListener("loadedmetadata", function() { times[1].textContent = fmt(audio.duration); });
+  audio.addEventListener("timeupdate", function() {
+    times[0].textContent = fmt(audio.currentTime);
+    progressBar.style.width = (audio.currentTime / audio.duration * 100) + "%";
+  });
+  audio.addEventListener("ended", function() {
+    var btn = document.querySelector(".play-btn");
+    btn.classList.remove("playing");
+    btn.querySelector("svg").innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+  });
+
+  window.togglePlay = function(btn) {
+    var svg = btn.querySelector("svg");
+    var isPlaying = btn.classList.toggle("playing");
+    if (isPlaying) {
+      audio.play();
+      svg.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    } else {
+      audio.pause();
+      svg.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+    }
+  };
+})();
 </script>
 {% endblock %}

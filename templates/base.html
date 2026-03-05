@@ -21,9 +21,13 @@
         </div>
       </a>
       <ul class="nav-links">
-        <li><a href="{% url 'recording-list' %}" class="{% block nav_home %}{% endblock %}">Recordings</a></li>
-        <li><a href="{% url 'recording-list' %}">Speakers</a></li>
-        <li><a href="{% url 'recording-list' %}">About</a></li>
+        <li><a href="{% url 'recording-list' %}" class="{% block nav_recordings %}{% endblock %}">Recordings</a></li>
+        {% if user.is_authenticated and user.is_staff %}
+        <li><a href="/admin/">Admin Panel</a></li>
+        <li><form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button type="submit" class="nav-logout-btn">Logout</button></form></li>
+        {% else %}
+        <li><a href="{% url 'login' %}">Login</a></li>
+        {% endif %}
       </ul>
     </div>
   </nav>
