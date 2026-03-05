@@ -3,8 +3,11 @@
 {% block nav_home %}active{% endblock %}
 
 {% block hero %}
+{% load static %}
 <section class="hero">
-  <h2>Listen. Learn. Reflect.</h2>
+  <img src="{% static 'img/logo.webp' %}" alt="Al Hamid Foundation" class="hero-logo">
+  <div class="hero-tagline">Enlighten | Enrich | Engage</div>
+  <h2>Al Hamid Foundation</h2>
   <p>A curated collection of spiritual discourses, bayaans, and dhikr sessions from our respected scholars.</p>
   <span class="ornament"></span>
 </section>
