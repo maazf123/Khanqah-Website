@@ -46,7 +46,9 @@
       "Bash(winget install:*)",
       "Bash(\"/c/Users/Saad/AppData/Local/ngrok/ngrok.exe\" config:*)",
       "Bash(\"$NGROK\" config:*)",
-      "Bash(\"$NGROK\" update:*)"
+      "Bash(\"$NGROK\" update:*)",
+      "WebFetch(domain:mixlr.com)",
+      "WebFetch(domain:www.deetosin.com)"
     ]
   }
 }
