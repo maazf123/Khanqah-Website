@@ -48,7 +48,13 @@
       "Bash(\"$NGROK\" config:*)",
       "Bash(\"$NGROK\" update:*)",
       "WebFetch(domain:mixlr.com)",
-      "WebFetch(domain:www.deetosin.com)"
+      "WebFetch(domain:www.deetosin.com)",
+      "Bash(mkdir:*)",
+      "Bash(mkdir -p /c/ngrok)",
+      "Bash(unzip -o /tmp/ngrok.zip -d /c/ngrok/)",
+      "Read(//c//**)",
+      "Bash(/c/ngrok/ngrok.exe config:*)",
+      "Bash(/c/ngrok/ngrok.exe http:*)"
     ]
   }
 }
