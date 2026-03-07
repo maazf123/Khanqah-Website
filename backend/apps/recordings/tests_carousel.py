@@ -578,7 +578,7 @@ class CarouselEdgeCaseLongTitleTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.long_title = "A" * 300  # 300-char title
+        cls.long_title = "A" * 255  # max-length title
         _rec(title="Featured", recording_date=datetime.date(2025, 1, 4),
              uploaded_at=_ts(3))
         _rec(title=cls.long_title, recording_date=datetime.date(2025, 1, 3),

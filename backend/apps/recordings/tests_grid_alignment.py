@@ -208,16 +208,35 @@ class CSSGridRulesTests(TestCase):
         self.assertIn("display:", rule)
         self.assertIn("flex", rule)
 
-    def test_recordings_carousel_has_overflow_x_auto(self):
-        """'.recordings-carousel' must use overflow-x: auto for horizontal scrolling."""
-        rule = _extract_rule(self.css, ".recordings-carousel")
-        self.assertIn("overflow-x:", rule)
-        self.assertIn("auto", rule)
+    def test_recordings_carousel_has_overflow_x_auto_on_mobile(self):
+        """'.recordings-carousel' must use overflow-x: auto inside the mobile media query."""
+        media_pattern = re.compile(
+            r'@media[^{]*max-width:\s*768px[^{]*\{(.*)\}',
+            re.DOTALL,
+        )
+        match = media_pattern.search(self.css)
+        self.assertIsNotNone(match)
+        media_body = match.group(1)
+        card_in_media = re.search(
+            r'\.recordings-carousel\s*\{([^}]*)\}', media_body
+        )
+        self.assertIsNotNone(card_in_media)
+        self.assertIn("overflow-x:", card_in_media.group(1))
 
-    def test_recordings_carousel_has_scroll_snap(self):
-        """'.recordings-carousel' must use scroll-snap-type for snap scrolling."""
-        rule = _extract_rule(self.css, ".recordings-carousel")
-        self.assertIn("scroll-snap-type:", rule)
+    def test_recordings_carousel_has_scroll_snap_on_mobile(self):
+        """'.recordings-carousel' must use scroll-snap-type inside the mobile media query."""
+        media_pattern = re.compile(
+            r'@media[^{]*max-width:\s*768px[^{]*\{(.*)\}',
+            re.DOTALL,
+        )
+        match = media_pattern.search(self.css)
+        self.assertIsNotNone(match)
+        media_body = match.group(1)
+        card_in_media = re.search(
+            r'\.recordings-carousel\s*\{([^}]*)\}', media_body
+        )
+        self.assertIsNotNone(card_in_media)
+        self.assertIn("scroll-snap-type:", card_in_media.group(1))
 
     def test_recordings_carousel_has_gap(self):
         """'.recordings-carousel' must define a gap between items."""
@@ -231,11 +250,11 @@ class CSSCardAlignmentTests(TestCase):
     def setUp(self):
         self.css = _read_css()
 
-    def test_carousel_card_has_fixed_width(self):
-        """'.carousel-card' must have a fixed flex basis for consistent card width."""
+    def test_carousel_card_has_equal_flex_on_desktop(self):
+        """'.carousel-card' must use flex: 1 1 0 for equal-width grid on desktop."""
         rule = _extract_rule(self.css, ".carousel-card")
         self.assertIn("flex:", rule)
-        self.assertIn("280px", rule)
+        self.assertIn("1 1 0", rule)
 
     def test_carousel_card_uses_flex_column(self):
         """'.carousel-card' must use display: flex and flex-direction: column."""
@@ -265,11 +284,11 @@ class CSSCardBodyFlexTests(TestCase):
         self.assertIn("flex-direction:", rule)
         self.assertIn("column", rule)
 
-    def test_carousel_card_tags_has_margin_top_auto(self):
-        """'.carousel-card-tags' must have margin-top: auto to push tags to bottom."""
+    def test_carousel_card_tags_uses_flex_wrap(self):
+        """'.carousel-card-tags' must use flex-wrap: wrap for tag layout."""
         rule = _extract_rule(self.css, ".carousel-card-tags")
-        self.assertIn("margin-top:", rule)
-        self.assertIn("auto", rule)
+        self.assertIn("flex-wrap:", rule)
+        self.assertIn("wrap", rule)
 
 
 # ---------------------------------------------------------------------------
@@ -368,11 +387,11 @@ class CardContentVariationTests(TestCase):
         self.assertIn("Short", content)
         self.assertIn("Medium Title Here", content)
 
-    def test_carousel_card_title_is_clamped(self):
-        """CSS must clamp carousel card titles with -webkit-line-clamp."""
+    def test_carousel_card_title_has_font_family(self):
+        """CSS must style carousel card titles with a serif font."""
         css = _read_css()
         rule = _extract_rule(css, ".carousel-card-title")
-        self.assertIn("-webkit-line-clamp", rule)
+        self.assertIn("font-family:", rule)
 
     def test_cards_still_have_carousel_card_body(self):
         """Cards always have a carousel-card-body element."""
@@ -392,8 +411,8 @@ class ResponsiveGridTests(TestCase):
     def setUp(self):
         self.css = _read_css()
 
-    def test_mobile_carousel_card_has_smaller_width(self):
-        """Inside a 768px media query, .carousel-card should have a smaller flex basis."""
+    def test_mobile_carousel_card_has_percentage_width(self):
+        """Inside a 768px media query, .carousel-card should have a percentage flex basis."""
         media_pattern = re.compile(
             r'@media[^{]*max-width:\s*768px[^{]*\{(.*)\}',
             re.DOTALL,
@@ -406,4 +425,4 @@ class ResponsiveGridTests(TestCase):
             r'\.carousel-card\s*\{([^}]*)\}', media_body
         )
         self.assertIsNotNone(card_in_media)
-        self.assertIn("240px", card_in_media.group(1))
+        self.assertIn("65%", card_in_media.group(1))

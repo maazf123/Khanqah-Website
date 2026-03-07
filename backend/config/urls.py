@@ -8,6 +8,7 @@ from django.http import FileResponse, Http404, HttpResponse, StreamingHttpRespon
 from django.urls import path, include, re_path
 from django.conf import settings
 
+from apps.core.views_archive import ArchivedItemsView
 from apps.core.views_home import HomeView
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
     path("recordings/", include("apps.recordings.urls")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", HomeView.as_view(), name="home"),
 ]
 

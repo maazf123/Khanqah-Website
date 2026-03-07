@@ -174,9 +174,10 @@ class RecordingListViewTests(TestCase):
         response = self.client.get(self.list_url)
         self.assertContains(response, "Featured Recording")
 
-    def test_featured_recording_speaker_displayed(self):
+    def test_featured_recording_speaker_not_displayed(self):
+        """Speaker is no longer shown on the recordings page (single speaker site)."""
         response = self.client.get(self.list_url)
-        self.assertContains(response, "Mufti Abdur Rahman")
+        self.assertNotContains(response, "Mufti Abdur Rahman")
 
     def test_featured_recording_date_displayed(self):
         response = self.client.get(self.list_url)

@@ -207,9 +207,11 @@ class WritingDeleteAPITests(TestCase):
         self.assertTrue(response.json()["ok"])
 
     def test_deletes_writing(self):
+        """Delete endpoint soft-deletes (archives) the writing."""
         pk = self.writing.pk
         self.client.post(self.url)
-        self.assertFalse(Writing.objects.filter(pk=pk).exists())
+        writing = Writing.objects.get(pk=pk)
+        self.assertTrue(writing.is_archived)
 
     def test_nonexistent_returns_404(self):
         url = reverse("writing-delete", kwargs={"pk": 99999})

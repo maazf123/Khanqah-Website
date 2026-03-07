@@ -202,9 +202,11 @@ class RecordingDeleteAPITests(TestCase):
         self.assertTrue(response.json()["ok"])
 
     def test_deletes_recording(self):
+        """Delete endpoint soft-deletes (archives) the recording."""
         pk = self.recording.pk
         self.client.post(self.url)
-        self.assertFalse(Recording.objects.filter(pk=pk).exists())
+        recording = Recording.objects.get(pk=pk)
+        self.assertTrue(recording.is_archived)
 
     def test_nonexistent_returns_404(self):
         url = reverse("recording-delete", kwargs={"pk": 99999})

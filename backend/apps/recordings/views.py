@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
 
@@ -25,7 +26,7 @@ class RecordingListView(ListView):
     context_object_name = "recordings"
 
     def get_queryset(self):
-        return Recording.objects.all()
+        return Recording.objects.filter(is_archived=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -43,7 +44,7 @@ class RecordingArchiveView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        qs = Recording.objects.all()
+        qs = Recording.objects.filter(is_archived=False)
         tag_slug = self.request.GET.get("tag")
         speaker = self.request.GET.get("speaker")
         if tag_slug:
@@ -65,6 +66,9 @@ class RecordingDetailView(DetailView):
     template_name = "recordings/recording_detail.html"
     context_object_name = "recording"
 
+    def get_queryset(self):
+        return Recording.objects.filter(is_archived=False)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["tags"] = Tag.objects.all()
@@ -84,7 +88,8 @@ class RecordingSearchView(ListView):
         qs = Recording.objects.filter(
             Q(title__icontains=q)
             | Q(description__icontains=q)
-            | Q(speaker__icontains=q)
+            | Q(speaker__icontains=q),
+            is_archived=False,
         ).distinct()
         tag_slug = self.request.GET.get("tag")
         if tag_slug:
@@ -108,6 +113,7 @@ class RecordingCreateView(StaffRequiredMixin, CreateView):
         form = super().get_form(form_class)
         form.fields["description"].required = False
         form.fields["tags"].required = False
+        form.fields["audio_file"].required = True
         return form
 
     def form_valid(self, form):
@@ -147,7 +153,31 @@ class RecordingUpdateView(StaffRequiredMixin, View):
 
 class RecordingDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
-        recording = get_object_or_404(Recording, pk=pk)
+        recording = get_object_or_404(Recording, pk=pk, is_archived=False)
+        recording.is_archived = True
+        recording.archived_at = timezone.now()
+        recording.save()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class RecordingRestoreView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        recording = get_object_or_404(Recording, pk=pk, is_archived=True)
+        recording.is_archived = False
+        recording.archived_at = None
+        recording.save()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class RecordingPermanentDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        recording = get_object_or_404(Recording, pk=pk, is_archived=True)
         recording.delete()
         return JsonResponse({"ok": True})
 

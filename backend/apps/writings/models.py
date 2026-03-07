@@ -7,6 +7,8 @@ class Writing(models.Model):
     tags = models.ManyToManyField("tags.Tag", blank=True)
     published_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-published_date"]

@@ -7,6 +7,7 @@ from django.db import IntegrityError
 from django.test import Client, TestCase, override_settings
 from django.urls import include, path, reverse
 
+from apps.core.views_archive import ArchivedItemsView
 from apps.core.views_home import HomeView
 from apps.tags.models import Tag
 
@@ -23,6 +24,7 @@ urlpatterns = [
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
     path("recordings/", include("apps.recordings.urls")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", HomeView.as_view(), name="home"),
 ]
 

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Archived Items - Khanqah e Ashrafiyyah Akhtariyyah{% endblock %}
+
+{% block content %}
+<a href="/" class="detail-back">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  Back to home
+</a>
+
+<div class="detail-card">
+  <div class="detail-accent"></div>
+  <div class="detail-body">
+    <h1 class="detail-title">Archived Items</h1>
+
+    {% if not archived_recordings and not archived_writings %}
+      <p class="archive-empty">No archived items</p>
+    {% endif %}
+
+    {% if archived_recordings %}
+    <h2 class="archive-section-title">Recordings</h2>
+    <div class="archive-list">
+      {% for recording in archived_recordings %}
+      <div class="archive-item" data-type="recording" data-pk="{{ recording.pk }}">
+        <div class="archive-item-info">
+          <span class="archive-item-title">{{ recording.title }}</span>
+          <span class="archive-item-meta">{{ recording.speaker }} &mdash; archived {{ recording.archived_at|timesince }} ago</span>
+        </div>
+        <div class="archive-item-actions">
+          <button class="btn btn-secondary btn-sm recording-restore-btn"
+                  onclick="archiveAction('{% url 'recording-restore' pk=recording.pk %}', this)">Restore</button>
+          <button class="btn btn-danger btn-sm recording-permanent-delete-btn"
+                  onclick="archiveAction('{% url 'recording-permanent-delete' pk=recording.pk %}', this)">Delete</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if archived_writings %}
+    <h2 class="archive-section-title">Writings</h2>
+    <div class="archive-list">
+      {% for writing in archived_writings %}
+      <div class="archive-item" data-type="writing" data-pk="{{ writing.pk }}">
+        <div class="archive-item-info">
+          <span class="archive-item-title">{{ writing.title }}</span>
+          <span class="archive-item-meta">archived {{ writing.archived_at|timesince }} ago</span>
+        </div>
+        <div class="archive-item-actions">
+          <button class="btn btn-secondary btn-sm writing-restore-btn"
+                  onclick="archiveAction('{% url 'writing-restore' pk=writing.pk %}', this)">Restore</button>
+          <button class="btn btn-danger btn-sm writing-permanent-delete-btn"
+                  onclick="archiveAction('{% url 'writing-permanent-delete' pk=writing.pk %}', this)">Delete</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function archiveAction(url, btn) {
+  btn.disabled = true;
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    credentials: 'same-origin'
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      btn.closest('.archive-item').remove();
+      // If no items left, show empty message
+      const items = document.querySelectorAll('.archive-item');
+      if (items.length === 0) {
+        location.reload();
+      }
+    }
+  }).catch(() => { btn.disabled = false; });
+}
+</script>
+{% endblock %}

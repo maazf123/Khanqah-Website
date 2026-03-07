@@ -44,6 +44,7 @@
       {% endif %}
     </div>
 
+    {% if recording.audio_file %}
     <div class="detail-player">
       <audio id="audio-player" src="{{ recording.audio_file.url }}" preload="metadata"></audio>
       <div class="audio-player">
@@ -69,6 +70,11 @@
         </button>
       </div>
     </div>
+    {% else %}
+    <div class="detail-player">
+      <p style="color:var(--text-secondary);text-align:center;padding:1.5rem 0;">No audio file available for this recording.</p>
+    </div>
+    {% endif %}
 
     {% if recording.description %}
     <div class="detail-description">
@@ -79,6 +85,7 @@
   </div>
 </div>
 
+{% if recording.audio_file %}
 <script>
 (function() {
   var audio = document.getElementById("audio-player");
@@ -135,6 +142,7 @@
   });
 })();
 </script>
+{% endif %}
 
 {% if user.is_authenticated and user.is_staff %}
 <div id="edit-recording-modal" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">

@@ -25,6 +25,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import include, path, reverse
 
 from apps.core.models import LiveStream
+from apps.core.views_archive import ArchivedItemsView
 
 # ---------------------------------------------------------------------------
 # Module-level URL configuration used by @override_settings(ROOT_URLCONF=...)
@@ -35,6 +36,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", include("apps.recordings.urls")),
 ]
 

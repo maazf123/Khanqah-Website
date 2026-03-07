@@ -67,9 +67,44 @@
     <div class="broadcast-footer">
       <form method="post" action="{% url 'livestream-stop' stream_key=livestream.stream_key %}" id="stop-form">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger" id="stop-stream-btn">Stop Stream</button>
       </form>
+      <button type="button" class="btn btn-danger" id="stop-stream-btn" onclick="document.getElementById('stop-confirm-modal').style.display='flex'">Stop Stream</button>
     </div>
+
+<!-- Stop Confirmation Modal -->
+<div id="stop-confirm-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>End Live Stream</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('stop-confirm-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;">
+      <p style="margin-bottom:1rem;color:var(--text-secondary);">Are you sure you want to end this stream? All listeners will be disconnected immediately.</p>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" id="stop-cancel-btn" onclick="document.getElementById('stop-confirm-modal').style.display='none'">Cancel</button>
+        <button type="button" class="btn btn-danger" id="stop-confirm-btn" onclick="confirmStopStream()">End Stream</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Post-Stream Modal (appears after stream ends) -->
+<div id="post-stream-modal" class="modal-overlay" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Stream Ended</h2>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;">
+      <p style="margin-bottom:0.5rem;color:var(--text-primary);font-weight:600;">{{ livestream.title }}</p>
+      <p style="margin-bottom:1.25rem;color:var(--text-secondary);">What would you like to do with this stream?</p>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" id="discard-btn" onclick="window.location.href='{% url 'livestream-list' %}'">Discard</button>
+        <button type="button" class="btn btn-secondary" id="archive-btn" onclick="archiveStream()">Archive</button>
+        <button type="button" class="btn btn-primary" id="post-btn" onclick="postStream()">Post</button>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -247,12 +282,63 @@ function copyLink() {
   }, 2000);
 }
 
-/* --- Stop Confirmation --- */
-document.getElementById("stop-form").addEventListener("submit", function(e) {
-  if (!confirm("Are you sure you want to stop this stream? All listeners will be disconnected.")) {
-    e.preventDefault();
-  }
-});
+/* --- Stop stream via AJAX, then show post-stream modal --- */
+function confirmStopStream() {
+  document.getElementById("stop-confirm-btn").disabled = true;
+  cleanupMic();
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+  stopVisualizer();
+
+  fetch("{% url 'livestream-stop' stream_key=livestream.stream_key %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    credentials: 'same-origin'
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      document.getElementById("stop-confirm-modal").style.display = "none";
+      document.getElementById("post-stream-modal").style.display = "flex";
+      document.getElementById("status-badge").textContent = "ENDED";
+      document.getElementById("status-badge").classList.remove("live-badge-active");
+      document.getElementById("status-text").textContent = "Stream has ended";
+    }
+  }).catch(() => {
+    document.getElementById("stop-form").submit();
+  });
+}
+
+/* --- Save stream as recording (post=public, archive=hidden) --- */
+function saveStream(mode) {
+  document.getElementById("post-btn").disabled = true;
+  document.getElementById("archive-btn").disabled = true;
+  fetch("{% url 'livestream-archive' stream_key=livestream.stream_key %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({mode: mode}),
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      if (mode === "post") {
+        window.location.href = "{% url 'recording-detail' pk=0 %}".replace('/0/', '/' + d.recording_id + '/');
+      } else {
+        window.location.href = "{% url 'archived-items' %}";
+      }
+    } else {
+      window.location.href = "{% url 'livestream-list' %}";
+    }
+  }).catch(() => {
+    window.location.href = "{% url 'livestream-list' %}";
+  });
+}
+
+function postStream() { saveStream("post"); }
+function archiveStream() { saveStream("archive"); }
 
 /* --- Cleanup on page unload --- */
 window.addEventListener("beforeunload", () => {

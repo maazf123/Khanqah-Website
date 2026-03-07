@@ -13,6 +13,10 @@
 {% if user.is_authenticated and user.is_staff %}
 <div class="admin-actions">
   <button type="button" class="btn-primary" onclick="document.getElementById('add-recording-modal').style.display='flex'">+ Add Recording</button>
+  <a href="{% url 'archived-items' %}" class="admin-link-subtle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+    View Archived
+  </a>
   <button type="button" class="admin-link-subtle" onclick="openTagModal()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
     Manage Tags
@@ -163,6 +167,9 @@ function updateTagDisplay(){
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>
     </div>
   </div>
+</div>
+<div class="see-all-section">
+  <a href="{% url 'recording-archive' %}" class="browse-all-link">See all recordings &rarr;</a>
 </div>
 {% endif %}
 

@@ -26,6 +26,7 @@ from django.utils.html import escape
 
 from apps.core.consumers import AudioStreamConsumer
 from apps.core.models import LiveStream
+from apps.core.views_archive import ArchivedItemsView
 
 # ---------------------------------------------------------------------------
 # Module-level URL configuration used by @override_settings(ROOT_URLCONF=...)
@@ -36,6 +37,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", include("apps.recordings.urls")),
 ]
 
@@ -423,8 +425,8 @@ class StreamLifecycleTests(TestCase):
         response = self.client.get(broadcast_url)
         self.assertEqual(response.status_code, 404)
 
-    def test_stopped_stream_cannot_be_stopped_again(self):
-        """Stopping an already-stopped stream returns 404."""
+    def test_stopped_stream_can_be_stopped_again_idempotently(self):
+        """Stopping an already-stopped stream succeeds gracefully (idempotent)."""
         stream = LiveStream.objects.create(
             title="Double Stop", created_by=self.staff_user
         )
@@ -435,9 +437,9 @@ class StreamLifecycleTests(TestCase):
         response = self.client.post(stop_url)
         self.assertEqual(response.status_code, 302)
 
-        # Try stopping again
+        # Stopping again also succeeds (idempotent)
         response = self.client.post(stop_url)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 302)
 
     def test_stopped_stream_still_visible_on_listen_page(self):
         """A stopped stream is still accessible on the listen page (shows ended state)."""
@@ -457,7 +459,7 @@ class StreamLifecycleTests(TestCase):
         self.assertIn("ended", content)
 
     def test_multiple_stops_on_same_stream(self):
-        """Multiple POST requests to stop an already-stopped stream all return 404."""
+        """Multiple POST requests to stop an already-stopped stream all succeed (idempotent)."""
         stream = LiveStream.objects.create(
             title="Multi Stop", created_by=self.staff_user
         )
@@ -468,10 +470,10 @@ class StreamLifecycleTests(TestCase):
         response = self.client.post(stop_url)
         self.assertEqual(response.status_code, 302)
 
-        # Second and third attempts return 404
+        # Subsequent stops also succeed (idempotent)
         for _ in range(2):
             response = self.client.post(stop_url)
-            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.status_code, 302)
 
     def test_active_stream_appears_in_list(self):
         """An active stream appears in the livestream list."""

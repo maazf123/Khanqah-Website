@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
 
@@ -25,7 +26,7 @@ class WritingListView(ListView):
     context_object_name = "writings"
 
     def get_queryset(self):
-        qs = Writing.objects.all()
+        qs = Writing.objects.filter(is_archived=False)
         tag_slug = self.request.GET.get("tag")
         if tag_slug:
             qs = qs.filter(tags__slug=tag_slug)
@@ -48,7 +49,7 @@ class WritingArchiveView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = Writing.objects.all()
+        qs = Writing.objects.filter(is_archived=False)
         tag_slug = self.request.GET.get("tag")
         if tag_slug:
             qs = qs.filter(tags__slug=tag_slug)
@@ -66,6 +67,9 @@ class WritingDetailView(DetailView):
     template_name = "writings/writing_detail.html"
     context_object_name = "writing"
 
+    def get_queryset(self):
+        return Writing.objects.filter(is_archived=False)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["tags"] = Tag.objects.all()
@@ -75,7 +79,7 @@ class WritingDetailView(DetailView):
 class WritingDetailAPIView(View):
     def get(self, request, pk):
         try:
-            writing = Writing.objects.get(pk=pk)
+            writing = Writing.objects.get(pk=pk, is_archived=False)
         except Writing.DoesNotExist:
             return JsonResponse({"error": "Not found"}, status=404)
         return JsonResponse({
@@ -135,7 +139,31 @@ class WritingUpdateView(StaffRequiredMixin, View):
 
 class WritingDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
-        writing = get_object_or_404(Writing, pk=pk)
+        writing = get_object_or_404(Writing, pk=pk, is_archived=False)
+        writing.is_archived = True
+        writing.archived_at = timezone.now()
+        writing.save()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class WritingRestoreView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        writing = get_object_or_404(Writing, pk=pk, is_archived=True)
+        writing.is_archived = False
+        writing.archived_at = None
+        writing.save()
+        return JsonResponse({"ok": True})
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class WritingPermanentDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        writing = get_object_or_404(Writing, pk=pk, is_archived=True)
         writing.delete()
         return JsonResponse({"ok": True})
 

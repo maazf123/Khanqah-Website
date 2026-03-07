@@ -26,6 +26,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import include, path, reverse
 
 from apps.core.models import LiveStream
+from apps.core.views_archive import ArchivedItemsView
 from apps.core.views_home import HomeView
 
 # ---------------------------------------------------------------------------
@@ -41,6 +42,7 @@ urlpatterns = [
     path("livestream/", include("apps.core.urls_livestream")),
     path("recordings/", include("apps.recordings.urls")),
     path("tags/", include("apps.tags.urls")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", HomeView.as_view(), name="home"),
 ]
 

@@ -19,6 +19,7 @@ from channels.routing import URLRouter
 
 from apps.core.consumers import AudioStreamConsumer
 from apps.core.models import LiveStream
+from apps.core.views_archive import ArchivedItemsView
 
 User = get_user_model()
 
@@ -36,6 +37,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("writings/", include("apps.writings.urls")),
     path("livestream/", include("apps.core.urls_livestream")),
+    path("archived/", ArchivedItemsView.as_view(), name="archived-items"),
     path("", include("apps.recordings.urls")),
 ]
 
@@ -328,8 +330,8 @@ class LiveStreamViewEdgeCaseTests(TestCase):
 
     # -- stop ------------------------------------------------------------------
 
-    def test_stop_already_stopped_stream_returns_404(self):
-        """Stopping an already-stopped stream returns 404 (not in active qs)."""
+    def test_stop_already_stopped_stream_is_idempotent(self):
+        """Stopping an already-stopped stream succeeds gracefully (redirect)."""
         self._login_staff()
         stream = self._create_stream()
         stream.is_active = False
@@ -337,7 +339,7 @@ class LiveStreamViewEdgeCaseTests(TestCase):
         stream.save()
         url = reverse("livestream-stop", kwargs={"stream_key": stream.stream_key})
         resp = self.client.post(url)
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 302)
 
     def test_stop_with_get_returns_405(self):
         """GET on stop endpoint returns 405 Method Not Allowed."""

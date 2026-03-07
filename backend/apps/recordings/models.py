@@ -6,13 +6,15 @@ class Recording(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
     speaker = models.CharField(max_length=255)
-    audio_file = models.FileField(upload_to="recordings/")
+    audio_file = models.FileField(upload_to="recordings/", blank=True, default="")
     recording_date = models.DateField()
     tags = models.ManyToManyField("tags.Tag", blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-uploaded_at"]
+        ordering = ["-uploaded_at", "-pk"]
 
     def __str__(self):
         return f"{self.title} - {self.speaker}"

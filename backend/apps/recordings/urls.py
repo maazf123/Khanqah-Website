@@ -9,5 +9,7 @@ urlpatterns = [
     path("<int:pk>/", views.RecordingDetailView.as_view(), name="recording-detail"),
     path("<int:pk>/edit/", views.RecordingUpdateView.as_view(), name="recording-update"),
     path("<int:pk>/delete/", views.RecordingDeleteView.as_view(), name="recording-delete"),
+    path("<int:pk>/restore/", views.RecordingRestoreView.as_view(), name="recording-restore"),
+    path("<int:pk>/permanent-delete/", views.RecordingPermanentDeleteView.as_view(), name="recording-permanent-delete"),
     path("search/", views.RecordingSearchView.as_view(), name="recording-search"),
 ]
