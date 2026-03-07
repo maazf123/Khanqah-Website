@@ -15,12 +15,16 @@ environ.Env.read_env(BASE_DIR.parent / ".env")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env("DJANGO_DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", ".ngrok-free.app", ".ngrok-free.dev"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+# Always allow ngrok domains for development tunneling
+ALLOWED_HOSTS += [".ngrok-free.app", ".ngrok-free.dev"]
 
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
-    default=["https://*.ngrok-free.app", "https://*.ngrok-free.dev"],
+    default=[],
 )
+# Always trust ngrok origins for development tunneling
+CSRF_TRUSTED_ORIGINS += ["https://*.ngrok-free.app", "https://*.ngrok-free.dev"]
 
 INSTALLED_APPS = [
     "daphne",
