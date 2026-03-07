@@ -85,93 +85,81 @@ function updateTagDisplay(){
 </script>
 {% endif %}
 
+{% load static %}
+
 {% if featured_recording %}
-<div class="featured-recording">
-  <div class="featured-recording-header">
-    <span class="featured-label">Latest Recording</span>
-  </div>
-  <div class="featured-recording-body">
-    <div class="featured-recording-info">
-      <h1 class="featured-recording-title">{{ featured_recording.title }}</h1>
-      <div class="featured-recording-meta">
-        <span class="featured-recording-date">
+<section class="recordings-showcase" style="background-image: url('{% static 'img/recordingpic.png' %}');">
+  <div class="recordings-showcase-overlay"></div>
+  <div class="recordings-showcase-inner">
+
+    <!-- Left: Featured / Latest Recording -->
+    <div class="showcase-featured">
+      <span class="showcase-featured-label">Latest Recording</span>
+      <h1 class="showcase-featured-title">{{ featured_recording.title }}</h1>
+      <div class="showcase-featured-meta">
+        <span class="showcase-featured-date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           {{ featured_recording.recording_date|date:"F d, Y" }}
         </span>
       </div>
       {% if featured_recording.tags.all %}
-      <div class="featured-recording-tags">
+      <div class="showcase-featured-tags">
         {% for tag in featured_recording.tags.all %}
           <span class="card-tag">{{ tag.name }}</span>
         {% endfor %}
       </div>
       {% endif %}
       {% if featured_recording.description %}
-      <p class="featured-recording-desc">{{ featured_recording.description }}</p>
+      <p class="showcase-featured-desc">{{ featured_recording.description }}</p>
+      {% endif %}
+      <a href="{% url 'recording-detail' featured_recording.pk %}" class="showcase-play-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <span>Listen Now</span>
+      </a>
+      {% if user.is_authenticated and user.is_staff %}
+      <div class="showcase-admin-actions">
+        <a href="{% url 'recording-detail' featured_recording.pk %}" class="detail-action-btn edit-btn" title="Edit">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </a>
+        <button type="button" class="detail-action-btn delete-btn" title="Delete" onclick="deleteItem({{ featured_recording.pk }},'recording')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
       {% endif %}
     </div>
-    <a href="{% url 'recording-detail' featured_recording.pk %}" class="featured-recording-play">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-      <span>Listen Now</span>
-    </a>
-  </div>
-  {% if user.is_authenticated and user.is_staff %}
-  <div class="featured-admin-actions">
-    <a href="{% url 'recording-detail' featured_recording.pk %}" class="detail-action-btn edit-btn" title="Edit">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    </a>
-    <button type="button" class="detail-action-btn delete-btn" title="Delete" onclick="deleteItem({{ featured_recording.pk }},'recording')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-    </button>
-  </div>
-  {% endif %}
-</div>
 
-{% if recent_recordings %}
-<div class="carousel-section">
-  <div class="carousel-header">
-    <h2 class="section-subheading">Latest recordings</h2>
-    <a href="{% url 'recording-archive' %}" class="carousel-view-all">View all</a>
-  </div>
-  <div class="carousel-wrapper">
-    <div class="recordings-carousel" role="region" aria-label="More recordings">
-      {% for recording in recent_recordings %}
-      <a href="{% url 'recording-detail' recording.pk %}" class="carousel-card">
-        <div class="carousel-card-accent"></div>
-        <div class="carousel-card-body">
-          <h3 class="carousel-card-title">{{ recording.title }}</h3>
-          {% if recording.description %}
-          <p class="carousel-card-desc">{{ recording.description }}</p>
-          {% endif %}
-          {% if recording.tags.all %}
-          <div class="carousel-card-tags">
-            {% for tag in recording.tags.all %}
-              <span class="card-tag">{{ tag.name }}</span>
-            {% endfor %}
+    <!-- Right: Older Recordings Stacked -->
+    {% if recent_recordings %}
+    <div class="showcase-older">
+      <div class="showcase-older-header">
+        <h2 class="showcase-older-title">More Recordings</h2>
+        <a href="{% url 'recording-archive' %}" class="showcase-view-all">View all &rarr;</a>
+      </div>
+      <div class="showcase-older-list">
+        {% for recording in recent_recordings %}
+        <a href="{% url 'recording-detail' recording.pk %}" class="showcase-older-card">
+          <div class="showcase-older-card-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
           </div>
-          {% endif %}
-          <div class="carousel-card-bottom">
-            <span class="carousel-card-duration">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-              Listen
-            </span>
-            <span class="carousel-card-bottom-date">{{ recording.recording_date|date:"M d, Y" }}</span>
+          <div class="showcase-older-card-info">
+            <h3 class="showcase-older-card-title">{{ recording.title }}</h3>
+            <div class="showcase-older-card-meta">
+              <span>{{ recording.recording_date|date:"M d, Y" }}</span>
+              {% if recording.tags.all %}
+                <span class="showcase-older-card-tag">{{ recording.tags.all.0.name }}</span>
+              {% endif %}
+            </div>
           </div>
-        </div>
-      </a>
-      {% endfor %}
-      <a href="{% url 'recording-archive' %}" class="carousel-see-all">
-        <span class="carousel-see-all-text">See all</span>
-      </a>
+          <svg class="showcase-older-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        {% endfor %}
+      </div>
+      <a href="{% url 'recording-archive' %}" class="showcase-browse-all">See all recordings &rarr;</a>
     </div>
-    <div class="carousel-arrow">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>
-    </div>
+    {% endif %}
+
   </div>
-</div>
-<div class="see-all-section">
-  <a href="{% url 'recording-archive' %}" class="browse-all-link">See all recordings &rarr;</a>
-</div>
-{% endif %}
+</section>
 
 {% else %}
 <div class="recordings-empty">
