@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Q
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -59,6 +60,33 @@ class WritingArchiveView(ListView):
         context = super().get_context_data(**kwargs)
         context["tags"] = Tag.objects.all()
         context["current_tag"] = self.request.GET.get("tag")
+        return context
+
+
+class WritingSearchView(ListView):
+    model = Writing
+    template_name = "writings/writing_archive.html"
+    context_object_name = "writings"
+    paginate_by = 12
+
+    def get_queryset(self):
+        q = self.request.GET.get("q", "").strip()
+        if not q:
+            return Writing.objects.none()
+        qs = Writing.objects.filter(
+            Q(title__icontains=q) | Q(body__icontains=q),
+            is_archived=False,
+        ).distinct()
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            qs = qs.filter(tags__slug=tag_slug)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("q", "")
+        context["tags"] = Tag.objects.all()
+        context["current_tag"] = self.request.GET.get("tag") or None
         return context
 
 

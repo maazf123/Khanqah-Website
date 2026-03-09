@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block nav_recordings %}active{% endblock %}
 
@@ -85,8 +86,6 @@ function updateTagDisplay(){
 </script>
 {% endif %}
 
-{% load static %}
-
 {% if featured_recording %}
 <section class="recordings-showcase" style="background-image: url('{% static 'img/recordingpic.png' %}');">
   <div class="recordings-showcase-overlay"></div>
@@ -95,13 +94,7 @@ function updateTagDisplay(){
     <!-- Left: Featured / Latest Recording -->
     <div class="showcase-featured">
       <span class="showcase-featured-label">Latest Recording</span>
-      <h1 class="showcase-featured-title">{{ featured_recording.title }}</h1>
-      <div class="showcase-featured-meta">
-        <span class="showcase-featured-date">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ featured_recording.recording_date|date:"F d, Y" }}
-        </span>
-      </div>
+
       {% if featured_recording.tags.all %}
       <div class="showcase-featured-tags">
         {% for tag in featured_recording.tags.all %}
@@ -109,13 +102,25 @@ function updateTagDisplay(){
         {% endfor %}
       </div>
       {% endif %}
+
+      <h1 class="showcase-featured-title">{{ featured_recording.title }}</h1>
+
+      <div class="showcase-featured-meta">
+        <span class="showcase-featured-date">
+          <svg class="meta-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+          {{ featured_recording.recording_date|date:"F d, Y" }}
+        </span>
+      </div>
+
       {% if featured_recording.description %}
       <p class="showcase-featured-desc">{{ featured_recording.description }}</p>
       {% endif %}
+
       <a href="{% url 'recording-detail' featured_recording.pk %}" class="showcase-play-btn">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
         <span>Listen Now</span>
       </a>
+
       {% if user.is_authenticated and user.is_staff %}
       <div class="showcase-admin-actions">
         <a href="{% url 'recording-detail' featured_recording.pk %}" class="detail-action-btn edit-btn" title="Edit">
@@ -128,29 +133,29 @@ function updateTagDisplay(){
       {% endif %}
     </div>
 
-    <!-- Right: Older Recordings Stacked -->
+    <!-- Right: More Recordings -->
     {% if recent_recordings %}
-    <div class="showcase-older">
-      <div class="showcase-older-header">
-        <h2 class="showcase-older-title">More Recordings</h2>
+    <div class="showcase-recent">
+      <div class="showcase-recent-header">
+        <h2 class="showcase-recent-heading">More Recordings</h2>
         <a href="{% url 'recording-archive' %}" class="showcase-view-all">View all &rarr;</a>
       </div>
-      <div class="showcase-older-list">
+      <div class="showcase-recent-list">
         {% for recording in recent_recordings %}
-        <a href="{% url 'recording-detail' recording.pk %}" class="showcase-older-card">
-          <div class="showcase-older-card-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <a href="{% url 'recording-detail' recording.pk %}" class="showcase-recent-card">
+          <div class="showcase-recent-card-num">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
           </div>
-          <div class="showcase-older-card-info">
-            <h3 class="showcase-older-card-title">{{ recording.title }}</h3>
-            <div class="showcase-older-card-meta">
+          <div class="showcase-recent-card-info">
+            <h3 class="showcase-recent-card-title">{{ recording.title }}</h3>
+            <div class="showcase-recent-card-meta">
               <span>{{ recording.recording_date|date:"M d, Y" }}</span>
               {% if recording.tags.all %}
-                <span class="showcase-older-card-tag">{{ recording.tags.all.0.name }}</span>
+                <span class="showcase-recent-card-tag">{{ recording.tags.all.0.name }}</span>
               {% endif %}
             </div>
           </div>
-          <svg class="showcase-older-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+          <svg class="showcase-recent-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg>
         </a>
         {% endfor %}
       </div>
